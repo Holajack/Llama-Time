@@ -12,40 +12,27 @@
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <style>
-        /* Basic Reset */
+        /* Styles remain the same as v29b */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { height: 100%; overflow: hidden; }
         body { display: flex; flex-direction: column; align-items: center; min-height: 100vh; background-color: #f0f0f0; font-family: 'Press Start 2P', cursive; color: #333; padding: 5px; transition: background-color 0.5s ease; }
         h1 { margin-bottom: 5px; color: #4a4a4a; font-size: 1.4em; text-align: center; flex-shrink: 0; transition: color 0.5s ease; }
-
-        /* Game Container */
         #game-container { position: relative; width: 100%; max-width: 800px; aspect-ratio: 2 / 1; height: auto; border: 5px solid #4a4a4a; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 20px rgba(0,0,0,0.2); margin-bottom: 5px; flex-shrink: 0; cursor: pointer; background-color: #87CEEB; transition: background-color 0.5s ease; }
         canvas { display: block; width: 100%; height: 100%; background-color: transparent; image-rendering: pixelated; image-rendering: -moz-crisp-edges; image-rendering: crisp-edges; }
-
-        /* Score and Info Display */
         #info-display { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px; width: 100%; max-width: 800px; font-size: 0.7em; margin-bottom: 5px; padding: 0 5px; flex-shrink: 0; }
         #info-display span { background-color: #fff; color: #333; border: 2px solid #4a4a4a; padding: 4px 8px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; flex-grow: 1; transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease; }
-
-        /* Mission Display */
         #mission-display { display: block; width: 100%; max-width: 800px; background-color: #fff; color: #555; padding: 5px 8px; border-radius: 8px; border: 2px solid #4a4a4a; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; font-size: 0.6em; margin-bottom: 5px; flex-shrink: 0; min-height: 25px; transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease; }
         #mission-display strong { color: #333; transition: color 0.5s ease; }
-
-        /* Buttons */
-        #controls { display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 5px; flex-wrap: wrap; flex-shrink: 0; }
+        #controls { display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 5px; flex-wrap: wrap; flex-shrink: 0; order: 4; }
         button { font-family: 'Press Start 2P', cursive; padding: 8px 12px; font-size: 0.7em; cursor: pointer; border-radius: 8px; border: 2px solid #4a4a4a; background: linear-gradient(145deg, #ffffff, #e6e6e6); box-shadow: 3px 3px 6px #c7c7c7, -3px -3px 6px #ffffff; transition: all 0.1s ease-in-out; color: #333; }
         button:active, button:focus { outline: none; box-shadow: inset 3px 3px 6px #c7c7c7, inset -3px -3px 6px #ffffff; transform: translateY(1px); }
         button:disabled { opacity: 0.6; cursor: not-allowed; background: #eee; box-shadow: none; }
         #install-button { display: none; background: linear-gradient(145deg, #a0e0a0, #70c070); border-color: #4a8a4a; box-shadow: 3px 3px 6px #8abc8a, -3px -3px 6px #c8f0c8; margin-left: 15px; }
         #install-button:active, #install-button:focus { box-shadow: inset 3px 3px 6px #8abc8a, inset -3px -3px 6px #c8f0c8; }
-
-        /* Game Over & Start Screen */
         #message-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: rgba(255, 255, 255, 0.95); color: #333; padding: 15px; border-radius: 15px; text-align: center; border: 3px solid #4a4a4a; box-shadow: 0 5px 15px rgba(0,0,0,0.2); z-index: 10; font-size: 0.9em; display: none; width: 80%; max-width: 350px; transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease; }
         #message-box h2 { margin-bottom: 8px; font-size: 1.2em; }
         #message-box p { margin-bottom: 12px; }
-
-        #mission-complete-popup { position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); background-color: rgba(76, 175, 80, 0.9); color: white; padding: 8px 15px; border-radius: 10px; font-size: 0.7em; z-index: 30; display: none; opacity: 0; transition: opacity 0.5s ease-out; }
-
-        /* Store Interface */
+        #mission-complete-popup { position: absolute; top: 10px; right: 10px; background-color: rgba(76, 175, 80, 0.9); color: white; padding: 8px 15px; border-radius: 10px; font-size: 0.7em; z-index: 30; display: none; opacity: 0; transition: opacity 0.5s ease-out; }
         #store-interface { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.9); display: none; flex-direction: column; align-items: center; overflow-y: auto; z-index: 20; color: white; padding: 15px 10px; text-align: center; }
         #store-interface h2 { margin-top: 10px; margin-bottom: 10px; font-size: 1.2em; flex-shrink: 0; }
         #store-interface > p { margin-bottom: 10px; font-size: 0.8em; flex-shrink: 0; }
@@ -54,66 +41,52 @@
         .store-item p { margin-bottom: 6px; font-size: 0.7em; }
         .store-item button { font-size: 0.6em; padding: 5px 10px; margin-top: 4px; }
         #close-store { margin-top: 10px; margin-bottom: 10px; padding: 8px 15px; font-size: 0.8em; flex-shrink: 0; }
-
-        /* Power-up Indicators */
         #powerup-indicators { position: absolute; top: 5px; left: 5px; z-index: 5; display: flex; gap: 4px; }
-        .indicator { font-size: 1.3em; opacity: 0.35; /* Default slightly dimmer */ text-shadow: 1px 1px 2px rgba(0,0,0,0.5); transition: opacity 0.3s ease, filter 0.3s ease; filter: grayscale(50%); /* Slightly desaturated when not owned/active */ }
-        .indicator.owned { /* Style for owned but not active */
-            opacity: 0.7;
-            filter: grayscale(0%); /* Full color */
-            /* Optional: Add a subtle static glow */
-             /* text-shadow: 0 0 3px white, 1px 1px 2px rgba(0,0,0,0.5); */
-        }
-        .indicator.active { /* Style for currently active */
-             opacity: 1;
-             filter: grayscale(0%);
-             animation: pulse 0.8s infinite;
-        }
-        #magnet-indicator.active { animation: pulse-magnet 0.6s infinite; } /* Keep special magnet pulse */
-
+        .indicator { font-size: 1.3em; opacity: 0.35; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); transition: opacity 0.3s ease, filter 0.3s ease; filter: grayscale(50%); }
+        .indicator.owned { opacity: 0.7; filter: grayscale(0%); }
+        .indicator.active { opacity: 1; filter: grayscale(0%); animation: pulse 0.8s infinite; }
+        #magnet-indicator.active { animation: pulse-magnet 0.6s infinite; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
         @keyframes pulse-magnet { 0% { transform: scale(1); text-shadow: 0 0 5px gold; } 50% { transform: scale(1.2); text-shadow: 0 0 15px gold; } 100% { transform: scale(1); text-shadow: 0 0 5px gold; } }
-
         /* --- Mobile Landscape Optimizations --- */
         @media (orientation: landscape) and (max-height: 600px), (orientation: landscape) and (max-width: 900px) {
-            body { padding: 2px; justify-content: flex-start; /* Align content to top */ }
+            body { padding: 2px; justify-content: flex-start; }
             h1 { font-size: 1.0em; margin-bottom: 2px; }
             #info-display { font-size: 0.55em; margin-bottom: 2px; gap: 3px; max-width: 95vw; }
             #info-display span { padding: 2px 5px; }
             #mission-display { font-size: 0.5em; padding: 3px 5px; margin-bottom: 2px; min-height: 0; max-width: 95vw; }
-            #controls { margin-bottom: 2px; gap: 5px; }
+            #controls { margin-bottom: 2px; gap: 5px; order: 5;}
             button { padding: 5px 8px; font-size: 0.55em; border-width: 2px; }
             #install-button { padding: 5px 8px; font-size: 0.55em; margin-left: 10px;}
-            #game-container {
-                width: 95vw; /* Prioritize width */
-                max-width: 800px; /* Still respect overall max width */
-                height: auto; /* Let height derive from aspect ratio */
-                aspect-ratio: 2 / 1; /* Maintain aspect ratio */
-                margin-bottom: 2px;
-                border-width: 3px;
-            }
-             #mission-complete-popup { bottom: 30px; font-size: 0.6em; padding: 5px 10px; }
+            #game-container { width: 95vw; max-width: 800px; height: auto; aspect-ratio: 2.5 / 1; margin-bottom: 2px; border-width: 3px; order: 4; }
+            #mission-complete-popup { bottom: auto; top: 5px; right: 5px; font-size: 0.6em; padding: 5px 10px; }
         }
         /* --- Mobile Portrait Optimizations --- */
         @media (orientation: portrait) and (max-width: 600px) {
             body { padding: 5px; }
-            h1 { font-size: 1.2em; margin-bottom: 4px; }
-            #info-display { font-size: 0.6em; margin-bottom: 4px; }
+            h1 { font-size: 1.2em; margin-bottom: 4px; order: 1; }
+            #info-display { font-size: 0.6em; margin-bottom: 4px; order: 2; }
             #info-display span { padding: 3px 6px; }
-            #mission-display { font-size: 0.55em; padding: 4px 6px; margin-bottom: 4px; }
-            #controls { margin-bottom: 4px; gap: 6px; }
-             button { padding: 6px 10px; font-size: 0.6em; }
-             #install-button { padding: 6px 10px; font-size: 0.6em; margin-left: 10px;}
-            #game-container { width: 95vw; height: 60vh; max-width: 95vw; aspect-ratio: unset; margin-bottom: 4px; } /* Taller height */
-             #mission-complete-popup { bottom: 40px; font-size: 0.7em; }
+            #mission-display { font-size: 0.55em; padding: 4px 6px; margin-bottom: 4px; order: 3; }
+            #controls { margin-bottom: 4px; gap: 6px; order: 4; }
+            button { padding: 6px 10px; font-size: 0.6em; }
+            #install-button { padding: 6px 10px; font-size: 0.6em; margin-left: 10px;}
+            #game-container { width: 95vw; height: 55vh; max-width: 95vw; aspect-ratio: unset; margin-bottom: 4px; order: 5; }
+            #mission-complete-popup { top: 5px; right: 5px; bottom: auto; left: auto; transform: none; font-size: 0.7em; }
         }
-
     </style>
 </head>
 <body>
     <h1>Llama Time!</h1>
     <div id="info-display"> <span id="score">Score: 0</span> <span id="coins">Coins: 0 🪙</span> <span id="high-score">High Score: 0</span> </div>
     <div id="mission-display">Loading Mission...</div>
+    <div id="controls">
+        <button id="start-button">Start Game</button>
+        <button id="jump-button" disabled>Jump (Space/Up)</button>
+        <button id="duck-button" disabled>Duck (Down)</button>
+        <button id="store-button">Store</button>
+        <button id="install-button" style="display: none;">Install App</button>
+    </div>
     <div id="game-container">
         <canvas id="gameCanvas"></canvas>
         <div id="message-box"></div>
@@ -121,9 +94,20 @@
         <div id="mission-complete-popup">Mission Complete!</div>
         <div id="store-interface"> <h2>Power-up Store</h2> <p>Your Coins: <span id="store-coin-balance">0</span> 🪙</p> <div class="store-item"> <h3>Shield (🛡️) - Cost: 50 🪙</h3> <p>Activates automatically next run!</p> <button id="buy-shield">Buy Shield</button> <p>Owned: <span id="shield-owned">0</span></p> </div> <div class="store-item"> <h3>Extra Life (❤️) - Cost: 100 🪙</h3> <p>Activates automatically next run!</p> <button id="buy-life">Buy Extra Life</button> <p>Owned: <span id="life-owned">0</span></p> </div> <div class="store-item"> <h3>Coin Magnet (🧲) - Cost: 75 🪙</h3> <p>Activates automatically next run!</p> <button id="buy-magnet">Buy Coin Magnet</button> <p>Owned: <span id="magnet-owned">0</span></p> </div> <button id="close-store">Close Store</button> </div>
     </div>
-    <div id="controls"> <button id="start-button">Start Game</button> <button id="jump-button" disabled>Jump (Space/Up)</button> <button id="duck-button" disabled>Duck (Down)</button> <button id="store-button">Store</button> <button id="install-button" style="display: none;">Install App</button> </div>
 
-    <script> if ('serviceWorker' in navigator) { /* ... SW registration ... */ } </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js') // Register sw.js
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+    </script>
 
     <script>
         // --- DOM Elements ---
@@ -177,7 +161,7 @@
         let touchEndX = 0;
         let touchEndY = 0;
         let touchStartTime = 0;
-        let isSwiping = false; // General flag if any swipe is in progress
+        let isSwiping = false; // Tracks if a swipe gesture is currently happening
         const minSwipeYDistance = 50; // Min Y distance for a vertical swipe
         const maxSwipeXDistance = 50; // Max X distance allowed for a vertical swipe
         const maxTapTime = 250; // Max duration for a tap
@@ -188,42 +172,7 @@
         // --- Llama Object (Restored Detailed Drawing & Animation) ---
         const llama = { /* ... properties from v26 ... */
             x: 50, y: 0, drawWidth: 56, drawHeight: 56, width: 50, height: 52, dy: 0, jumpPower: -11, isJumping: false, isDucking: false, duckHeight: 30, baseY: 0, runFrame: 0, runAnimationSpeed: 6,
-            draw() { // Restored detailed drawing from v26
-                const bodyHigh='#F5E5D0', bodyLight='#EAD8BF', bodyMain='#D8B898', bodyShade='#B89878'; const legMain='#A08060', legShade='#806040', hoof='#604030'; const faceMain='#F0D0B0', earInner='#E0C0A0', eyeWhite='#FFFFFF', eyePupil='#000000', nose='#705040', hair='#907050';
-                const p = 2;
-                ctx.save(); ctx.translate(Math.round(this.x), Math.round(this.y));
-                let scaleY=1; let duckOffsetY=0; // Define scaleY here
-                if(this.isDucking){ scaleY=0.75; duckOffsetY = this.drawHeight * (1 - scaleY); ctx.translate(0,duckOffsetY); ctx.scale(1,scaleY); } // Corrected calculation
-                ctx.fillStyle=bodyMain; ctx.fillRect(p*4, p*4, p*18, p*14); ctx.fillStyle=bodyShade; ctx.fillRect(p*5, p*15, p*16, p*3); ctx.fillStyle=bodyLight; ctx.fillRect(p*5, p*4, p*16, p*3); ctx.fillStyle=bodyLight; ctx.fillRect(p*4, p*6, p*2, p*10); ctx.fillRect(p*3, p*8, p*1, p*6); ctx.fillStyle=bodyMain; ctx.fillRect(p*2, p*7, p*2, p*8); ctx.fillStyle=hair; ctx.fillRect(p*0, p*10, p*4, p*4); ctx.fillRect(p*-1, p*11, p*2, p*2);
-                ctx.fillStyle=bodyMain; ctx.fillRect(p*16, p*-1, p*6, p*8); ctx.fillStyle=bodyShade; ctx.fillRect(p*16, p*5, p*5, p*2); ctx.fillStyle=hair; ctx.fillRect(p*15, p*-4, p*7, p*5); ctx.fillRect(p*17, p*-6, p*3, p*2); ctx.fillRect(p*14, p*-1, p*3, p*3);
-                ctx.fillStyle=bodyMain; ctx.fillRect(p*19, p*-9, p*9, p*10); ctx.fillStyle=faceMain; ctx.fillRect(p*26, p*-6, p*4, p*6); ctx.fillStyle=nose; ctx.fillRect(p*28, p*-3, p*2, p*1); ctx.fillRect(p*27, p*0, p*3, p*1); ctx.fillStyle=eyeWhite; ctx.fillRect(p*23, p*-5, p*2, p*2); ctx.fillStyle=eyePupil; ctx.fillRect(p*24, p*-4, p*1, p*1); ctx.fillStyle=bodyMain; ctx.fillRect(p*19, p*-13, p*3, p*5); ctx.fillRect(p*23, p*-13, p*3, p*5); ctx.fillStyle=earInner; ctx.fillRect(p*20, p*-12, p*1, p*3); ctx.fillRect(p*24, p*-12, p*1, p*3);
-                const currentRunFrame = Math.floor(this.runFrame / this.runAnimationSpeed) % 2; const upperLegW=p*3, upperLegH=p*5, lowerLegW=p*3, lowerLegH=p*4, hoofH=p*2; const frontUpperX=p*6, frontUpperY=p*17; const backUpperX=p*14, backUpperY=p*17;
-                if(this.isJumping) { ctx.fillStyle=legShade; ctx.fillRect(frontUpperX-p*1,frontUpperY,upperLegW,upperLegH+lowerLegH); ctx.fillStyle=legMain; ctx.fillRect(frontUpperX-p*1+p,frontUpperY,upperLegW-p*2,upperLegH+lowerLegH); ctx.fillStyle=hoof; ctx.fillRect(frontUpperX-p*1,frontUpperY+upperLegH+lowerLegH,lowerLegW,hoofH); ctx.fillStyle=legShade; ctx.fillRect(backUpperX-p*1,backUpperY,upperLegW,upperLegH+lowerLegH); ctx.fillStyle=legMain; ctx.fillRect(backUpperX-p*1+p,backUpperY,upperLegW-p*2,upperLegH+lowerLegH); ctx.fillStyle=hoof; ctx.fillRect(backUpperX-p*1,backUpperY+upperLegH+lowerLegH,lowerLegW,hoofH); }
-                else if (this.isDucking) { const duckLegH=p*4; const duckHoofY=frontUpperY+duckLegH; ctx.fillStyle=legShade; ctx.fillRect(frontUpperX,frontUpperY,upperLegW,duckLegH); ctx.fillStyle=legMain; ctx.fillRect(frontUpperX+p,frontUpperY,upperLegW-p*2,duckLegH); ctx.fillStyle=hoof; ctx.fillRect(frontUpperX,duckHoofY,upperLegW,hoofH); ctx.fillStyle=legShade; ctx.fillRect(backUpperX,backUpperY,upperLegW,duckLegH); ctx.fillStyle=legMain; ctx.fillRect(backUpperX+p,backUpperY,upperLegW-p*2,duckLegH); ctx.fillStyle=hoof; ctx.fillRect(backUpperX,duckHoofY,upperLegW,hoofH); }
-                else { if(currentRunFrame === 0) { ctx.fillStyle=legShade; ctx.fillRect(frontUpperX,frontUpperY,upperLegW,upperLegH); ctx.fillRect(frontUpperX+p*2,frontUpperY+upperLegH,lowerLegW,lowerLegH); ctx.fillStyle=legMain; ctx.fillRect(frontUpperX+p,frontUpperY,upperLegW-p*2,upperLegH); ctx.fillRect(frontUpperX+p*2+p,frontUpperY+upperLegH,lowerLegW-p*2,lowerLegH); ctx.fillStyle=hoof; ctx.fillRect(frontUpperX+p*2,frontUpperY+upperLegH+lowerLegH,lowerLegW,hoofH); ctx.fillStyle=legShade; ctx.fillRect(backUpperX,backUpperY,upperLegW,upperLegH); ctx.fillRect(backUpperX-p*2,backUpperY+upperLegH,lowerLegW,lowerLegH); ctx.fillStyle=legMain; ctx.fillRect(backUpperX+p,backUpperY,upperLegW-p*2,upperLegH); ctx.fillRect(backUpperX-p*2+p,backUpperY+upperLegH,lowerLegW-p*2,lowerLegH); ctx.fillStyle=hoof; ctx.fillRect(backUpperX-p*2,backUpperY+upperLegH+lowerLegH,lowerLegW,hoofH); }
-                       else { ctx.fillStyle=legShade; ctx.fillRect(frontUpperX,frontUpperY,upperLegW,upperLegH); ctx.fillRect(frontUpperX-p*2,frontUpperY+upperLegH,lowerLegW,lowerLegH); ctx.fillStyle=legMain; ctx.fillRect(frontUpperX+p,frontUpperY,upperLegW-p*2,upperLegH); ctx.fillRect(frontUpperX-p*2+p,frontUpperY+upperLegH,lowerLegW-p*2,lowerLegH); ctx.fillStyle=hoof; ctx.fillRect(frontUpperX-p*2,frontUpperY+upperLegH+lowerLegH,lowerLegW,hoofH); ctx.fillStyle=legShade; ctx.fillRect(backUpperX,backUpperY,upperLegW,upperLegH); ctx.fillRect(backUpperX+p*2,backUpperY+upperLegH,lowerLegW,lowerLegH); ctx.fillStyle=legMain; ctx.fillRect(backUpperX+p,backUpperY,upperLegW-p*2,upperLegH); ctx.fillRect(backUpperX+p*2+p,backUpperY+upperLegH,lowerLegW-p*2,lowerLegH); ctx.fillStyle=hoof; ctx.fillRect(backUpperX+p*2,backUpperY+upperLegH+lowerLegH,lowerLegW,hoofH); } }
-                // --- Shield Visual (Restored & Enhanced) ---
-                if (isShieldActive) {
-                    ctx.strokeStyle = 'rgba(0, 255, 255, 0.7)'; // Cyan base
-                    ctx.lineWidth = 2 + Math.sin(frameCount * 0.2) * 1; // Pulsating width
-                    ctx.beginPath();
-                    let hitboxVisualY = this.isDucking ? duckOffsetY : 0;
-                    let hitboxDrawHeight = this.height * scaleY; // Use hitbox height scaled
-                    let hitboxDrawWidth = this.width;
-                    // Pulsating size
-                    let radiusX = (hitboxDrawWidth / 2) + 4 + Math.sin(frameCount * 0.15) * 2;
-                    let radiusY = (hitboxDrawHeight / 2) + 4 + Math.sin(frameCount * 0.15) * 2;
-                    ctx.ellipse( hitboxDrawWidth / 2, hitboxVisualY + hitboxDrawHeight / 2, radiusX, radiusY, 0, 0, Math.PI * 2 );
-                    // Rotating dashes (Faster)
-                    ctx.setLineDash([10, 5]); // Dash pattern (length, gap)
-                    ctx.lineDashOffset = frameCount * -1.5; // Increased speed multiplier
-                    ctx.stroke();
-                    // Reset dash for other drawings
-                    ctx.setLineDash([]);
-                    ctx.lineDashOffset = 0;
-                }
-                ctx.restore();
-             },
+            draw() { /* ... Detailed drawing code from v26 ... */ const bodyHigh='#F5E5D0', bodyLight='#EAD8BF', bodyMain='#D8B898', bodyShade='#B89878'; const legMain='#A08060', legShade='#806040', hoof='#604030'; const faceMain='#F0D0B0', earInner='#E0C0A0', eyeWhite='#FFFFFF', eyePupil='#000000', nose='#705040', hair='#907050'; const p = 2; ctx.save(); ctx.translate(Math.round(this.x), Math.round(this.y)); let scaleY=1; let duckOffsetY=0; if(this.isDucking){ scaleY=0.75; duckOffsetY = this.drawHeight * (1 - scaleY); ctx.translate(0,duckOffsetY); ctx.scale(1,scaleY); } ctx.fillStyle=bodyMain; ctx.fillRect(p*4, p*4, p*18, p*14); ctx.fillStyle=bodyShade; ctx.fillRect(p*5, p*15, p*16, p*3); ctx.fillStyle=bodyLight; ctx.fillRect(p*5, p*4, p*16, p*3); ctx.fillStyle=bodyLight; ctx.fillRect(p*4, p*6, p*2, p*10); ctx.fillRect(p*3, p*8, p*1, p*6); ctx.fillStyle=bodyMain; ctx.fillRect(p*2, p*7, p*2, p*8); ctx.fillStyle=hair; ctx.fillRect(p*0, p*10, p*4, p*4); ctx.fillRect(p*-1, p*11, p*2, p*2); ctx.fillStyle=bodyMain; ctx.fillRect(p*16, p*-1, p*6, p*8); ctx.fillStyle=bodyShade; ctx.fillRect(p*16, p*5, p*5, p*2); ctx.fillStyle=hair; ctx.fillRect(p*15, p*-4, p*7, p*5); ctx.fillRect(p*17, p*-6, p*3, p*2); ctx.fillRect(p*14, p*-1, p*3, p*3); ctx.fillStyle=bodyMain; ctx.fillRect(p*19, p*-9, p*9, p*10); ctx.fillStyle=faceMain; ctx.fillRect(p*26, p*-6, p*4, p*6); ctx.fillStyle=nose; ctx.fillRect(p*28, p*-3, p*2, p*1); ctx.fillRect(p*27, p*0, p*3, p*1); ctx.fillStyle=eyeWhite; ctx.fillRect(p*23, p*-5, p*2, p*2); ctx.fillStyle=eyePupil; ctx.fillRect(p*24, p*-4, p*1, p*1); ctx.fillStyle=bodyMain; ctx.fillRect(p*19, p*-13, p*3, p*5); ctx.fillRect(p*23, p*-13, p*3, p*5); ctx.fillStyle=earInner; ctx.fillRect(p*20, p*-12, p*1, p*3); ctx.fillRect(p*24, p*-12, p*1, p*3); const currentRunFrame = Math.floor(this.runFrame / this.runAnimationSpeed) % 2; const upperLegW=p*3, upperLegH=p*5, lowerLegW=p*3, lowerLegH=p*4, hoofH=p*2; const frontUpperX=p*6, frontUpperY=p*17; const backUpperX=p*14, backUpperY=p*17; if(this.isJumping) { ctx.fillStyle=legShade; ctx.fillRect(frontUpperX-p*1,frontUpperY,upperLegW,upperLegH+lowerLegH); ctx.fillStyle=legMain; ctx.fillRect(frontUpperX-p*1+p,frontUpperY,upperLegW-p*2,upperLegH+lowerLegH); ctx.fillStyle=hoof; ctx.fillRect(frontUpperX-p*1,frontUpperY+upperLegH+lowerLegH,lowerLegW,hoofH); ctx.fillStyle=legShade; ctx.fillRect(backUpperX-p*1,backUpperY,upperLegW,upperLegH+lowerLegH); ctx.fillStyle=legMain; ctx.fillRect(backUpperX-p*1+p,backUpperY,upperLegW-p*2,upperLegH+lowerLegH); ctx.fillStyle=hoof; ctx.fillRect(backUpperX-p*1,backUpperY+upperLegH+lowerLegH,lowerLegW,hoofH); } else if (this.isDucking) { const duckLegH=p*4; const duckHoofY=frontUpperY+duckLegH; ctx.fillStyle=legShade; ctx.fillRect(frontUpperX,frontUpperY,upperLegW,duckLegH); ctx.fillStyle=legMain; ctx.fillRect(frontUpperX+p,frontUpperY,upperLegW-p*2,duckLegH); ctx.fillStyle=hoof; ctx.fillRect(frontUpperX,duckHoofY,upperLegW,hoofH); ctx.fillStyle=legShade; ctx.fillRect(backUpperX,backUpperY,upperLegW,duckLegH); ctx.fillStyle=legMain; ctx.fillRect(backUpperX+p,backUpperY,upperLegW-p*2,duckLegH); ctx.fillStyle=hoof; ctx.fillRect(backUpperX,duckHoofY,upperLegW,hoofH); } else { if(currentRunFrame === 0) { ctx.fillStyle=legShade; ctx.fillRect(frontUpperX,frontUpperY,upperLegW,upperLegH); ctx.fillRect(frontUpperX+p*2,frontUpperY+upperLegH,lowerLegW,lowerLegH); ctx.fillStyle=legMain; ctx.fillRect(frontUpperX+p,frontUpperY,upperLegW-p*2,upperLegH); ctx.fillRect(frontUpperX+p*2+p,frontUpperY+upperLegH,lowerLegW-p*2,lowerLegH); ctx.fillStyle=hoof; ctx.fillRect(frontUpperX+p*2,frontUpperY+upperLegH+lowerLegH,lowerLegW,hoofH); ctx.fillStyle=legShade; ctx.fillRect(backUpperX,backUpperY,upperLegW,upperLegH); ctx.fillRect(backUpperX-p*2,backUpperY+upperLegH,lowerLegW,lowerLegH); ctx.fillStyle=legMain; ctx.fillRect(backUpperX+p,backUpperY,upperLegW-p*2,upperLegH); ctx.fillRect(backUpperX-p*2+p,backUpperY+upperLegH,lowerLegW-p*2,lowerLegH); ctx.fillStyle=hoof; ctx.fillRect(backUpperX-p*2,backUpperY+upperLegH+lowerLegH,lowerLegW,hoofH); } else { ctx.fillStyle=legShade; ctx.fillRect(frontUpperX,frontUpperY,upperLegW,upperLegH); ctx.fillRect(frontUpperX-p*2,frontUpperY+upperLegH,lowerLegW,lowerLegH); ctx.fillStyle=legMain; ctx.fillRect(frontUpperX+p,frontUpperY,upperLegW-p*2,upperLegH); ctx.fillRect(frontUpperX-p*2+p,frontUpperY+upperLegH,lowerLegW-p*2,lowerLegH); ctx.fillStyle=hoof; ctx.fillRect(frontUpperX-p*2,frontUpperY+upperLegH+lowerLegH,lowerLegW,hoofH); ctx.fillStyle=legShade; ctx.fillRect(backUpperX,backUpperY,upperLegW,upperLegH); ctx.fillRect(backUpperX+p*2,backUpperY+upperLegH,lowerLegW,lowerLegH); ctx.fillStyle=legMain; ctx.fillRect(backUpperX+p,backUpperY,upperLegW-p*2,upperLegH); ctx.fillRect(backUpperX+p*2+p,backUpperY+upperLegH,lowerLegW-p*2,lowerLegH); ctx.fillStyle=hoof; ctx.fillRect(backUpperX+p*2,backUpperY+upperLegH+lowerLegH,lowerLegW,hoofH); } } if (isShieldActive) { ctx.strokeStyle = 'rgba(0, 255, 255, 0.7)'; ctx.lineWidth = 2 + Math.sin(frameCount * 0.2) * 1; ctx.beginPath(); let hitboxVisualY = this.isDucking ? duckOffsetY : 0; let hitboxDrawHeight = this.height * scaleY; let hitboxDrawWidth = this.width; let radiusX = (hitboxDrawWidth / 2) + 4 + Math.sin(frameCount * 0.15) * 2; let radiusY = (hitboxDrawHeight / 2) + 4 + Math.sin(frameCount * 0.15) * 2; ctx.ellipse( hitboxDrawWidth / 2, hitboxVisualY + hitboxDrawHeight / 2, radiusX, radiusY, 0, 0, Math.PI * 2 ); ctx.setLineDash([10, 5]); ctx.lineDashOffset = frameCount * -1.5; ctx.stroke(); ctx.setLineDash([]); ctx.lineDashOffset = 0; } ctx.restore(); },
             update() { /* Restored runFrame update */ let appliedGravity = gravity; const airborne = this.y < this.baseY || this.dy > 0; if (airborne && this.isDucking) { appliedGravity *= fastFallMultiplier; } if (this.y < this.baseY || this.dy < 0) { this.dy += appliedGravity; } else { this.dy = 0; this.y = this.baseY; if (this.isJumping) { this.isJumping = false;} } this.y += this.dy; if (this.y > this.baseY) { this.y = this.baseY; this.dy = 0; if (this.isJumping) { this.isJumping = false; } } if (!this.isJumping && !this.isDucking && this.y >= this.baseY) { this.runFrame++; } else if (!this.isJumping && this.y >= this.baseY) { this.runFrame = 0; } else { this.runFrame = 0; } },
             jump() { if (isGameRunning && !this.isJumping && !this.isDucking) { this.dy = this.jumpPower; this.isJumping = true; this.isDucking = false; if(audioReady) jumpSynth.triggerAttackRelease("F#5", "16n"); } }, // Restored jump sound
             duck(shouldDuck) { if (isGameRunning) { this.isDucking = shouldDuck; } else { this.isDucking = false; } },
