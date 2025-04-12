@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#87CEEB">
+    <title>Llama Time!</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Llama Time">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        /* Basic Reset */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; overflow: hidden; }
+        body { display: flex; flex-direction: column; align-items: center; min-height: 100vh; background-color: #f0f0f0; font-family: 'Press Start 2P', cursive; color: #333; padding: 5px; transition: background-color 0.5s ease; }
+        h1 { margin-bottom: 5px; color: #4a4a4a; font-size: 1.4em; text-align: center; flex-shrink: 0; transition: color 0.5s ease; }
+
+        /* Game Container */
+        #game-container { position: relative; width: 100%; max-width: 800px; aspect-ratio: 2 / 1; height: auto; border: 5px solid #4a4a4a; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 20px rgba(0,0,0,0.2); margin-bottom: 5px; flex-shrink: 0; cursor: pointer; background-color: #87CEEB; transition: background-color 0.5s ease; }
+        canvas { display: block; width: 100%; height: 100%; background-color: transparent; image-rendering: pixelated; image-rendering: -moz-crisp-edges; image-rendering: crisp-edges; }
+
+        /* Score and Info Display */
+        #info-display { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px; width: 100%; max-width: 800px; font-size: 0.7em; margin-bottom: 5px; padding: 0 5px; flex-shrink: 0; }
+        #info-display span { background-color: #fff; color: #333; border: 2px solid #4a4a4a; padding: 4px 8px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; flex-grow: 1; transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease; }
+
+        /* Mission Display */
+        #mission-display { display: block; width: 100%; max-width: 800px; background-color: #fff; color: #555; padding: 5px 8px; border-radius: 8px; border: 2px solid #4a4a4a; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; font-size: 0.6em; margin-bottom: 5px; flex-shrink: 0; min-height: 25px; transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease; }
+        #mission-display strong { color: #333; transition: color 0.5s ease; }
+
+        /* Buttons */
+        #controls { display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 5px; flex-wrap: wrap; flex-shrink: 0; }
+        button { font-family: 'Press Start 2P', cursive; padding: 8px 12px; font-size: 0.7em; cursor: pointer; border-radius: 8px; border: 2px solid #4a4a4a; background: linear-gradient(145deg, #ffffff, #e6e6e6); box-shadow: 3px 3px 6px #c7c7c7, -3px -3px 6px #ffffff; transition: all 0.1s ease-in-out; color: #333; }
+        button:active, button:focus { outline: none; box-shadow: inset 3px 3px 6px #c7c7c7, inset -3px -3px 6px #ffffff; transform: translateY(1px); }
+        button:disabled { opacity: 0.6; cursor: not-allowed; background: #eee; box-shadow: none; }
+        #install-button { display: none; background: linear-gradient(145deg, #a0e0a0, #70c070); border-color: #4a8a4a; box-shadow: 3px 3px 6px #8abc8a, -3px -3px 6px #c8f0c8; margin-left: 15px; }
+        #install-button:active, #install-button:focus { box-shadow: inset 3px 3px 6px #8abc8a, inset -3px -3px 6px #c8f0c8; }
+
+        /* Game Over & Start Screen */
+        #message-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: rgba(255, 255, 255, 0.95); color: #333; padding: 15px; border-radius: 15px; text-align: center; border: 3px solid #4a4a4a; box-shadow: 0 5px 15px rgba(0,0,0,0.2); z-index: 10; font-size: 0.9em; display: none; width: 80%; max-width: 350px; transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease; }
+        #message-box h2 { margin-bottom: 8px; font-size: 1.2em; }
+        #message-box p { margin-bottom: 12px; }
+
+        #mission-complete-popup { position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); background-color: rgba(76, 175, 80, 0.9); color: white; padding: 8px 15px; border-radius: 10px; font-size: 0.7em; z-index: 30; display: none; opacity: 0; transition: opacity 0.5s ease-out; }
+
+        /* Store Interface */
+        #store-interface { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.9); display: none; flex-direction: column; align-items: center; overflow-y: auto; z-index: 20; color: white; padding: 15px 10px; text-align: center; }
+        #store-interface h2 { margin-top: 10px; margin-bottom: 10px; font-size: 1.2em; flex-shrink: 0; }
+        #store-interface > p { margin-bottom: 10px; font-size: 0.8em; flex-shrink: 0; }
+        .store-item { background-color: #4a4a4a; padding: 8px; margin-bottom: 8px; border-radius: 8px; width: 90%; max-width: 300px; border: 2px solid #fff; flex-shrink: 0; }
+        .store-item h3 { font-size: 0.9em; margin-bottom: 4px; }
+        .store-item p { margin-bottom: 6px; font-size: 0.7em; }
+        .store-item button { font-size: 0.6em; padding: 5px 10px; margin-top: 4px; }
+        #close-store { margin-top: 10px; margin-bottom: 10px; padding: 8px 15px; font-size: 0.8em; flex-shrink: 0; }
+
+        /* Power-up Indicators */
+        #powerup-indicators { position: absolute; top: 5px; left: 5px; z-index: 5; display: flex; gap: 4px; }
+        .indicator { font-size: 1.3em; opacity: 0.5; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); transition: opacity 0.3s ease; }
+        .indicator.active { opacity: 1; animation: pulse 0.8s infinite; }
+        #magnet-indicator.active { animation: pulse-magnet 0.6s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        @keyframes pulse-magnet { 0% { transform: scale(1); text-shadow: 0 0 5px gold; } 50% { transform: scale(1.2); text-shadow: 0 0 15px gold; } 100% { transform: scale(1); text-shadow: 0 0 5px gold; } }
+
+        /* --- Mobile Landscape Optimizations --- */
+        @media (orientation: landscape) and (max-height: 600px), (orientation: landscape) and (max-width: 900px) {
+            body { padding: 2px; justify-content: flex-start; /* Align content to top */ }
+            h1 { font-size: 1.0em; margin-bottom: 2px; }
+            #info-display { font-size: 0.55em; margin-bottom: 2px; gap: 3px; max-width: 95vw; }
+            #info-display span { padding: 2px 5px; }
+            #mission-display { font-size: 0.5em; padding: 3px 5px; margin-bottom: 2px; min-height: 0; max-width: 95vw; }
+            #controls { margin-bottom: 2px; gap: 5px; }
+            button { padding: 5px 8px; font-size: 0.55em; border-width: 2px; }
+            #install-button { padding: 5px 8px; font-size: 0.55em; margin-left: 10px;}
+            #game-container {
+                width: 95vw; /* Prioritize width */
+                max-width: 800px; /* Still respect overall max width */
+                height: auto; /* Let height derive from aspect ratio */
+                aspect-ratio: 2 / 1; /* Maintain aspect ratio */
+                margin-bottom: 2px;
+                border-width: 3px;
+            }
+             #mission-complete-popup { bottom: 30px; font-size: 0.6em; padding: 5px 10px; }
+        }
+
+        /* --- Mobile Portrait Optimizations --- */
+        @media (orientation: portrait) and (max-width: 600px) {
+            body { padding: 5px; }
+            h1 { font-size: 1.2em; margin-bottom: 4px; }
+            #info-display { font-size: 0.6em; margin-bottom: 4px; }
+            #info-display span { padding: 3px 6px; }
+            #mission-display { font-size: 0.55em; padding: 4px 6px; margin-bottom: 4px; }
+            #controls { margin-bottom: 4px; gap: 6px; }
+             button { padding: 6px 10px; font-size: 0.6em; }
+             #install-button { padding: 6px 10px; font-size: 0.6em; margin-left: 10px;}
+
+            #game-container {
+                width: 95vw;
+                height: 50vh; /* Use significant vertical height */
+                max-width: 95vw;
+                aspect-ratio: unset; /* Override aspect ratio */
+                margin-bottom: 4px;
+            }
+             #mission-complete-popup { bottom: 40px; font-size: 0.7em; }
+        }
+
+    </style>
+</head>
+<body>
+    <h1>Llama Time!</h1>
+    <div id="info-display"> <span id="score">Score: 0</span> <span id="coins">Coins: 0 🪙</span> <span id="high-score">High Score: 0</span> </div>
+    <div id="mission-display">Loading Mission...</div>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <div id="message-box"></div>
+        <div id="powerup-indicators"> <span id="shield-indicator" class="indicator">🛡️</span> <span id="magnet-indicator" class="indicator">🧲</span> <span id="life-indicator" class="indicator">❤️</span> </div>
+        <div id="mission-complete-popup">Mission Complete!</div>
+        <div id="store-interface"> <h2>Power-up Store</h2> <p>Your Coins: <span id="store-coin-balance">0</span> 🪙</p> <div class="store-item"> <h3>Shield (🛡️) - Cost: 50 🪙</h3> <p>Activates automatically next run!</p> <button id="buy-shield">Buy Shield</button> <p>Owned: <span id="shield-owned">0</span></p> </div> <div class="store-item"> <h3>Extra Life (❤️) - Cost: 100 🪙</h3> <p>Activates automatically next run!</p> <button id="buy-life">Buy Extra Life</button> <p>Owned: <span id="life-owned">0</span></p> </div> <div class="store-item"> <h3>Coin Magnet (🧲) - Cost: 75 🪙</h3> <p>Activates automatically next run!</p> <button id="buy-magnet">Buy Coin Magnet</button> <p>Owned: <span id="magnet-owned">0</span></p> </div> <button id="close-store">Close Store</button> </div>
+    </div>
+    <div id="controls"> <button id="start-button">Start Game</button> <button id="jump-button" disabled>Jump (Space/Up)</button> <button id="duck-button" disabled>Duck (Down)</button> <button id="store-button">Store</button> <button id="install-button" style="display: none;">Install App</button> </div>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js') // Register sw.js
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+    </script>
+
+    <script>
+        // --- DOM Elements ---
+        const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getContext('2d'); const scoreDisplay = document.getElementById('score'); const coinsDisplay = document.getElementById('coins'); const highScoreDisplay = document.getElementById('high-score'); const messageBox = document.getElementById('message-box'); const startButton = document.getElementById('start-button'); const jumpButton = document.getElementById('jump-button'); const duckButton = document.getElementById('duck-button'); const storeButton = document.getElementById('store-button'); const closeStoreButton = document.getElementById('close-store'); const storeInterface = document.getElementById('store-interface'); const storeCoinBalance = document.getElementById('store-coin-balance'); const buyShieldButton = document.getElementById('buy-shield'); const buyLifeButton = document.getElementById('buy-life'); const buyMagnetButton = document.getElementById('buy-magnet'); const shieldOwnedDisplay = document.getElementById('shield-owned'); const lifeOwnedDisplay = document.getElementById('life-owned'); const magnetOwnedDisplay = document.getElementById('magnet-owned'); const shieldIndicator = document.getElementById('shield-indicator'); const magnetIndicator = document.getElementById('magnet-indicator'); const lifeIndicator = document.getElementById('life-indicator'); const gameContainer = document.getElementById('game-container'); const missionDisplay = document.getElementById('mission-display'); const missionCompletePopup = document.getElementById('mission-complete-popup');
+        const installButton = document.getElementById('install-button');
+
+        // --- Game Variables ---
+        let score = 0; let highScore = localStorage.getItem('llamaHighScore') || 0; let coins = parseInt(localStorage.getItem('llamaCoins') || 0); let shieldsOwned = parseInt(localStorage.getItem('llamaShields') || 0); let livesOwned = parseInt(localStorage.getItem('llamaLives') || 0); let magnetsOwned = parseInt(localStorage.getItem('llamaMagnets') || 0);
+        let initialGameSpeed = 3.0; let gameSpeed = initialGameSpeed; const speedIncrement = 0.3; let lastScoreThreshold = 0;
+        let gravity = 0.35; const fastFallMultiplier = 3.5;
+        let isGameOver = true; let isGameRunning = false; let animationFrameId; let obstacles = []; let coinObjects = []; let clouds = [];
+        let frameCount = 0; let isShieldActive = false; let isMagnetActive = false; let magnetTimer = 0; const magnetDuration = 600; let extraLives = 0;
+
+        // --- Day/Night Cycle ---
+        let isNight = false; const dayBgColor = '#87CEEB'; const nightBgColor = '#2c3e50'; const dayGroundColor = '#D2B48C'; const nightGroundColor = '#B08D57'; const dayTextColor = '#333'; const nightTextColor = '#ecf0f1'; const nightMissionTextColor = '#bdc3c7'; const nightMissionStrongColor = '#ecf0f1'; const dayBodyBgColor = '#f0f0f0'; const nightBodyBgColor = '#34495e'; const nightUiBg = '#4a5a6a'; const nightUiBorder = '#7f8c8d';
+
+        // --- Missions (Restored) ---
+        const missionPool = [ { id: 'score100', description: 'Reach Score 100', target: 100, reward: 15, type: 'score' }, { id: 'collect5', description: 'Collect 5 coins', target: 5, reward: 15, type: 'coins' }, { id: 'score300', description: 'Reach Score 300', target: 300, reward: 30, type: 'score' }, { id: 'jump5cacti', description: 'Jump over 5 cacti', target: 5, reward: 35, type: 'jump_cactus' }, { id: 'collect15', description: 'Collect 15 coins', target: 15, reward: 40, type: 'coins' }, { id: 'score750', description: 'Reach Score 750', target: 750, reward: 75, type: 'score' }, { id: 'duck3birds', description: 'Duck under 3 birds', target: 3, reward: 45, type: 'duck_bird' }, { id: 'collect30', description: 'Collect 30 coins', target: 30, reward: 80, type: 'coins' }, ];
+        let activeMission = null; let missionProgress = 0; let coinsCollectedThisRun = 0; let cactiJumpedThisRun = 0; let birdsDuckedThisRun = 0;
+
+        // --- Store Costs ---
+        const shieldCost = 50; const lifeCost = 100; const magnetCost = 75;
+
+        // --- Audio Synths (Restored) ---
+        let jumpSynth, coinSynth, hitSynth, uiClickSynth, missionSynth;
+        let audioReady = false;
+
+        // --- Audio Setup (Restored) ---
+        function setupAudio() {
+            if (audioReady) return;
+            try {
+                jumpSynth = new Tone.Synth({ oscillator: { type: "square" }, volume: -8, envelope: { attack: 0.005, decay: 0.05, sustain: 0.01, release: 0.1 } }).toDestination();
+                coinSynth = new Tone.Synth({ oscillator: { type: "sine" }, volume: -10, envelope: { attack: 0.001, decay: 0.1, sustain: 0, release: 0.1 } }).toDestination();
+                hitSynth = new Tone.MembraneSynth({ pitchDecay: 0.08, octaves: 4, volume: -5, envelope: { attack: 0.001, decay: 0.3, sustain: 0.01, release: 0.5, attackCurve: "exponential" } }).toDestination();
+                uiClickSynth = new Tone.Synth({ volume: -15, oscillator: { type: "triangle" }, envelope: { attack: 0.001, decay: 0.03, sustain: 0, release: 0.05 } }).toDestination();
+                missionSynth = new Tone.Synth({ oscillator: { type: "sawtooth" }, volume: -8, envelope: { attack: 0.01, decay: 0.1, sustain: 0.1, release: 0.1 } }).toDestination();
+                audioReady = true;
+                console.log("Audio ready.");
+            } catch (err) {
+                console.error("Error setting up audio:", err);
+                audioReady = false;
+            }
+        }
+
+        // --- PWA Install Prompt ---
+        let deferredPrompt;
+
+        // --- Touch Swipe Variables ---
+        let touchStartY = 0;
+        let touchEndY = 0;
+        const minSwipeDistance = 40; // Pixels needed to count as a swipe
+        let touchStartTime = 0;
+        const maxTapTime = 200; // ms to differentiate tap vs swipe start
+        let isPotentialSwipe = false; // Flag to track touch start
+
+        // --- Game Objects ---
+        const groundHeight = 50;
+
+        // --- Llama Object (Restored Detailed Drawing & Animation) ---
+        const llama = { /* ... properties from v26 ... */
+            x: 50, y: 0, drawWidth: 56, drawHeight: 56, width: 50, height: 52, dy: 0, jumpPower: -11, isJumping: false, isDucking: false, duckHeight: 30, baseY: 0, runFrame: 0, runAnimationSpeed: 6,
+            draw() { // Restored detailed drawing from v26
+                const bodyHigh='#F5E5D0', bodyLight='#EAD8BF', bodyMain='#D8B898', bodyShade='#B89878'; const legMain='#A08060', legShade='#806040', hoof='#604030'; const faceMain='#F0D0B0', earInner='#E0C0A0', eyeWhite='#FFFFFF', eyePupil='#000000', nose='#705040', hair='#907050';
+                const p = 2;
+                ctx.save(); ctx.translate(Math.round(this.x), Math.round(this.y));
+                let scaleY=1; let duckOffsetY=0; // Define scaleY here
+                if(this.isDucking){ scaleY=0.75; duckOffsetY = this.drawHeight * (1 - scaleY); ctx.translate(0,duckOffsetY); ctx.scale(1,scaleY); } // Corrected calculation
+                ctx.fillStyle=bodyMain; ctx.fillRect(p*4, p*4, p*18, p*14); ctx.fillStyle=bodyShade; ctx.fillRect(p*5, p*15, p*16, p*3); ctx.fillStyle=bodyLight; ctx.fillRect(p*5, p*4, p*16, p*3); ctx.fillStyle=bodyLight; ctx.fillRect(p*4, p*6, p*2, p*10); ctx.fillRect(p*3, p*8, p*1, p*6); ctx.fillStyle=bodyMain; ctx.fillRect(p*2, p*7, p*2, p*8); ctx.fillStyle=hair; ctx.fillRect(p*0, p*10, p*4, p*4); ctx.fillRect(p*-1, p*11, p*2, p*2);
+                ctx.fillStyle=bodyMain; ctx.fillRect(p*16, p*-1, p*6, p*8); ctx.fillStyle=bodyShade; ctx.fillRect(p*16, p*5, p*5, p*2); ctx.fillStyle=hair; ctx.fillRect(p*15, p*-4, p*7, p*5); ctx.fillRect(p*17, p*-6, p*3, p*2); ctx.fillRect(p*14, p*-1, p*3, p*3);
+                ctx.fillStyle=bodyMain; ctx.fillRect(p*19, p*-9, p*9, p*10); ctx.fillStyle=faceMain; ctx.fillRect(p*26, p*-6, p*4, p*6); ctx.fillStyle=nose; ctx.fillRect(p*28, p*-3, p*2, p*1); ctx.fillRect(p*27, p*0, p*3, p*1); ctx.fillStyle=eyeWhite; ctx.fillRect(p*23, p*-5, p*2, p*2); ctx.fillStyle=eyePupil; ctx.fillRect(p*24, p*-4, p*1, p*1); ctx.fillStyle=bodyMain; ctx.fillRect(p*19, p*-13, p*3, p*5); ctx.fillRect(p*23, p*-13, p*3, p*5); ctx.fillStyle=earInner; ctx.fillRect(p*20, p*-12, p*1, p*3); ctx.fillRect(p*24, p*-12, p*1, p*3);
+                const currentRunFrame = Math.floor(this.runFrame / this.runAnimationSpeed) % 2; const upperLegW=p*3, upperLegH=p*5, lowerLegW=p*3, lowerLegH=p*4, hoofH=p*2; const frontUpperX=p*6, frontUpperY=p*17; const backUpperX=p*14, backUpperY=p*17;
+                if(this.isJumping) { ctx.fillStyle=legShade; ctx.fillRect(frontUpperX-p*1,frontUpperY,upperLegW,upperLegH+lowerLegH); ctx.fillStyle=legMain; ctx.fillRect(frontUpperX-p*1+p,frontUpperY,upperLegW-p*2,upperLegH+lowerLegH); ctx.fillStyle=hoof; ctx.fillRect(frontUpperX-p*1,frontUpperY+upperLegH+lowerLegH,lowerLegW,hoofH); ctx.fillStyle=legShade; ctx.fillRect(backUpperX-p*1,backUpperY,upperLegW,upperLegH+lowerLegH); ctx.fillStyle=legMain; ctx.fillRect(backUpperX-p*1+p,backUpperY,upperLegW-p*2,upperLegH+lowerLegH); ctx.fillStyle=hoof; ctx.fillRect(backUpperX-p*1,backUpperY+upperLegH+lowerLegH,lowerLegW,hoofH); }
+                else if (this.isDucking) { const duckLegH=p*4; const duckHoofY=frontUpperY+duckLegH; ctx.fillStyle=legShade; ctx.fillRect(frontUpperX,frontUpperY,upperLegW,duckLegH); ctx.fillStyle=legMain; ctx.fillRect(frontUpperX+p,frontUpperY,upperLegW-p*2,duckLegH); ctx.fillStyle=hoof; ctx.fillRect(frontUpperX,duckHoofY,upperLegW,hoofH); ctx.fillStyle=legShade; ctx.fillRect(backUpperX,backUpperY,upperLegW,duckLegH); ctx.fillStyle=legMain; ctx.fillRect(backUpperX+p,backUpperY,upperLegW-p*2,duckLegH); ctx.fillStyle=hoof; ctx.fillRect(backUpperX,duckHoofY,upperLegW,hoofH); }
+                else { if(currentRunFrame === 0) { ctx.fillStyle=legShade; ctx.fillRect(frontUpperX,frontUpperY,upperLegW,upperLegH); ctx.fillRect(frontUpperX+p*2,frontUpperY+upperLegH,lowerLegW,lowerLegH); ctx.fillStyle=legMain; ctx.fillRect(frontUpperX+p,frontUpperY,upperLegW-p*2,upperLegH); ctx.fillRect(frontUpperX+p*2+p,frontUpperY+upperLegH,lowerLegW-p*2,lowerLegH); ctx.fillStyle=hoof; ctx.fillRect(frontUpperX+p*2,frontUpperY+upperLegH+lowerLegH,lowerLegW,hoofH); ctx.fillStyle=legShade; ctx.fillRect(backUpperX,backUpperY,upperLegW,upperLegH); ctx.fillRect(backUpperX-p*2,backUpperY+upperLegH,lowerLegW,lowerLegH); ctx.fillStyle=legMain; ctx.fillRect(backUpperX+p,backUpperY,upperLegW-p*2,upperLegH); ctx.fillRect(backUpperX-p*2+p,backUpperY+upperLegH,lowerLegW-p*2,lowerLegH); ctx.fillStyle=hoof; ctx.fillRect(backUpperX-p*2,backUpperY+upperLegH+lowerLegH,lowerLegW,hoofH); }
+                       else { ctx.fillStyle=legShade; ctx.fillRect(frontUpperX,frontUpperY,upperLegW,upperLegH); ctx.fillRect(frontUpperX-p*2,frontUpperY+upperLegH,lowerLegW,lowerLegH); ctx.fillStyle=legMain; ctx.fillRect(frontUpperX+p,frontUpperY,upperLegW-p*2,upperLegH); ctx.fillRect(frontUpperX-p*2+p,frontUpperY+upperLegH,lowerLegW-p*2,lowerLegH); ctx.fillStyle=hoof; ctx.fillRect(frontUpperX-p*2,frontUpperY+upperLegH+lowerLegH,lowerLegW,hoofH); ctx.fillStyle=legShade; ctx.fillRect(backUpperX,backUpperY,upperLegW,upperLegH); ctx.fillRect(backUpperX+p*2,backUpperY+upperLegH,lowerLegW,lowerLegH); ctx.fillStyle=legMain; ctx.fillRect(backUpperX+p,backUpperY,upperLegW-p*2,upperLegH); ctx.fillRect(backUpperX+p*2+p,backUpperY+upperLegH,lowerLegW-p*2,lowerLegH); ctx.fillStyle=hoof; ctx.fillRect(backUpperX+p*2,backUpperY+upperLegH+lowerLegH,lowerLegW,hoofH); } }
+                // --- Shield Visual (Restored) ---
+                if (isShieldActive) {
+                    ctx.strokeStyle = 'rgba(0, 255, 255, 0.7)'; ctx.lineWidth = 3; ctx.beginPath();
+                    let hitboxVisualY = this.isDucking ? duckOffsetY : 0;
+                    let hitboxDrawHeight = this.height * scaleY; let hitboxDrawWidth = this.width;
+                    ctx.ellipse( hitboxDrawWidth / 2, hitboxVisualY + hitboxDrawHeight / 2, (hitboxDrawWidth / 2) + 4, (hitboxDrawHeight / 2) + 4, 0, 0, Math.PI * 2 );
+                    ctx.stroke();
+                }
+                ctx.restore();
+             },
+            update() { /* Restored runFrame update */ let appliedGravity = gravity; const airborne = this.y < this.baseY || this.dy > 0; if (airborne && this.isDucking) { appliedGravity *= fastFallMultiplier; } if (this.y < this.baseY || this.dy < 0) { this.dy += appliedGravity; } else { this.dy = 0; this.y = this.baseY; if (this.isJumping) { this.isJumping = false;} } this.y += this.dy; if (this.y > this.baseY) { this.y = this.baseY; this.dy = 0; if (this.isJumping) { this.isJumping = false; } } if (!this.isJumping && !this.isDucking && this.y >= this.baseY) { this.runFrame++; } else if (!this.isJumping && this.y >= this.baseY) { this.runFrame = 0; } else { this.runFrame = 0; } },
+            jump() { if (isGameRunning && !this.isJumping && !this.isDucking) { this.dy = this.jumpPower; this.isJumping = true; this.isDucking = false; if(audioReady) jumpSynth.triggerAttackRelease("F#5", "16n"); } }, // Restored jump sound (higher pitch)
+            duck(shouldDuck) { if (isGameRunning) { this.isDucking = shouldDuck; } else { this.isDucking = false; } }, // Allow duck flag mid-air
+            reset() { /* Remains the same */ this.baseY = canvas.height - groundHeight - this.height; this.y = this.baseY; this.dy = 0; this.isJumping = false; this.isDucking = false; this.runFrame = 0; }
+        };
+
+        // --- Obstacle Class (Restored Detailed Drawing) ---
+        class Obstacle {
+             constructor(x, y, width, height, type, colorScheme = null) { this.x = x; this.y = y; this.width = width; this.height = height; this.type = type; this.colorScheme = colorScheme; }
+             draw() { // Restored detailed drawing from v26
+                 // --- Cactus Drawing (p=2, reduced conceptual size) ---
+                 if (this.type === 'cactus') {
+                    const p = 2;
+                    const mainColor='#2E8B57', darkColor='#228B22', lightColor='#3CB371', spineColor='#1A4D2E';
+                    ctx.save(); ctx.translate(Math.round(this.x), Math.round(this.y));
+                    const conceptualHeight = this.height / p; const conceptualWidth = this.width / p; const segmentHeight = Math.max(2, Math.floor(conceptualHeight / 5));
+                    for (let i_concept = 0; i_concept < conceptualHeight; i_concept += 1) { const i_draw = i_concept * p; const segmentIndex = Math.floor(i_concept / segmentHeight); const currentMain = (segmentIndex % 2 === 0) ? mainColor : lightColor; const currentDark = (segmentIndex % 2 === 0) ? darkColor : mainColor; const currentLight = (segmentIndex % 2 === 0) ? lightColor : '#54C581'; ctx.fillStyle = currentMain; ctx.fillRect(p * 2, i_draw, conceptualWidth*p - p * 4, p); ctx.fillStyle = currentDark; ctx.fillRect(p * 2, i_draw, p * 1, p); ctx.fillRect(conceptualWidth*p - p * 3, i_draw, p * 1, p); ctx.fillStyle = currentLight; ctx.fillRect(p * 3, i_draw, p * (conceptualWidth > 4 ? 2 : 1), p); } ctx.fillStyle = darkColor; ctx.fillRect(p * 2, this.height - p * 2, conceptualWidth*p - p * 4, p * 2);
+                    const armW_concept = Math.max(3, Math.floor(conceptualWidth * 0.4)); const armH_concept = Math.max(5, Math.floor(conceptualHeight * 0.5)); const armLX_concept = 2 - armW_concept; const armLY_concept = conceptualHeight * 0.3; ctx.fillStyle = mainColor; ctx.fillRect(armLX_concept*p, armLY_concept*p, armW_concept*p, armH_concept*p); ctx.fillStyle = darkColor; ctx.fillRect(armLX_concept*p, armLY_concept*p, p, armH_concept*p); ctx.fillRect((armLX_concept+armW_concept)*p-p, armLY_concept*p, p, armH_concept*p); ctx.fillRect(armLX_concept*p, (armLY_concept+armH_concept)*p-p, armW_concept*p, p); ctx.fillStyle = lightColor; ctx.fillRect((armLX_concept+1)*p, armLY_concept*p, (armW_concept-2)*p, p); const armRX_concept = conceptualWidth - 2; const armRY_concept = conceptualHeight * 0.15; ctx.fillStyle = mainColor; ctx.fillRect(armRX_concept*p, armRY_concept*p, armW_concept*p, armH_concept*p); ctx.fillStyle = darkColor; ctx.fillRect(armRX_concept*p, armRY_concept*p, p, armH_concept*p); ctx.fillRect((armRX_concept+armW_concept)*p-p, armRY_concept*p, p, armH_concept*p); ctx.fillRect(armRX_concept*p, (armRY_concept+armH_concept)*p-p, armW_concept*p, p); ctx.fillStyle = lightColor; ctx.fillRect((armRX_concept+1)*p, armRY_concept*p, (armW_concept-2)*p, p);
+                    ctx.fillStyle = spineColor; for(let i = 0; i < conceptualHeight / 2; i++) { ctx.fillRect(p*2 + Math.random()*(this.width-p*4), Math.random()*this.height, p/2, p/2); if(Math.random() < 0.4) ctx.fillRect(armLX_concept*p + Math.random()*armW_concept*p, armLY_concept*p + Math.random()*armH_concept*p, p/2, p/2); if(Math.random() < 0.4) ctx.fillRect(armRX_concept*p + Math.random()*armW_concept*p, armRY_concept*p + Math.random()*armH_concept*p, p/2, p/2); } ctx.restore();
+                 }
+                 // --- Bird Drawing (p_bird=2, adjusted conceptual size, ORANGE colors) ---
+                 else if (this.type === 'bird') {
+                    const p_bird = 2;
+                    const cs = { bodyLight: '#FFDAB9', bodyMain: '#FFA500', bodyDark: '#CD853F', wingHigh: '#FFF8DC', wingLight: '#FFE4B5', wingMain: '#FFDEAD', beak: '#A0522D', eye: '#000000', eyeWhite: '#FFFFFF' }; // Orange Scheme
+                    ctx.save(); ctx.translate(Math.round(this.x), Math.round(this.y));
+                    ctx.fillStyle = cs.bodyMain; ctx.fillRect(p_bird*5, p_bird*4, p_bird*12, p_bird*8); ctx.fillStyle = cs.bodyLight; ctx.fillRect(p_bird*6, p_bird*8, p_bird*10, p_bird*4); ctx.fillStyle = cs.bodyDark; ctx.fillRect(p_bird*5, p_bird*4, p_bird*12, p_bird*2);
+                    ctx.fillStyle = cs.bodyMain; ctx.fillRect(p_bird*17, p_bird*6, p_bird*4, p_bird*5); ctx.fillStyle = cs.bodyDark; ctx.fillRect(p_bird*17, p_bird*6, p_bird*4, p_bird*1);
+                    ctx.fillStyle = cs.bodyMain; ctx.fillRect(p_bird*0, p_bird*1, p_bird*6, p_bird*6); ctx.fillStyle = cs.bodyDark; ctx.fillRect(p_bird*0, p_bird*1, p_bird*6, p_bird*1);
+                    ctx.fillStyle = cs.beak; ctx.fillRect(p_bird*-3, p_bird*3, p_bird*4, p_bird*2); ctx.fillRect(p_bird*-2, p_bird*4, p_bird*2, p_bird*1);
+                    ctx.fillStyle = cs.eyeWhite; ctx.fillRect(p_bird*2, p_bird*3, p_bird*3, p_bird*3); ctx.fillStyle = cs.eye; ctx.fillRect(p_bird*3, p_bird*4, p_bird*1, p_bird*1);
+                    const flap = Math.sin(frameCount * 0.4) * p_bird * 5;
+                    ctx.fillStyle = cs.wingMain; ctx.beginPath(); ctx.moveTo(p_bird*15, p_bird*5); ctx.lineTo(p_bird*10, p_bird*-1 + flap); ctx.lineTo(p_bird*8, p_bird*6); ctx.closePath(); ctx.fill(); ctx.fillStyle = cs.wingLight; ctx.beginPath(); ctx.moveTo(p_bird*14, p_bird*5); ctx.lineTo(p_bird*10, p_bird*1 + flap); ctx.lineTo(p_bird*9, p_bird*6); ctx.closePath(); ctx.fill(); ctx.fillStyle = cs.wingHigh; ctx.beginPath(); ctx.moveTo(p_bird*13, p_bird*5); ctx.lineTo(p_bird*10, p_bird*2 + flap); ctx.lineTo(p_bird*9.5, p_bird*6); ctx.closePath(); ctx.fill();
+                    ctx.fillStyle = cs.wingMain; ctx.beginPath(); ctx.moveTo(p_bird*15, p_bird*10); ctx.lineTo(p_bird*10, p_bird*14 - flap); ctx.lineTo(p_bird*8, p_bird*9); ctx.closePath(); ctx.fill(); ctx.fillStyle = cs.wingLight; ctx.beginPath(); ctx.moveTo(p_bird*14, p_bird*10); ctx.lineTo(p_bird*10, p_bird*13 - flap); ctx.lineTo(p_bird*9, p_bird*9); ctx.closePath(); ctx.fill(); ctx.fillStyle = cs.wingHigh; ctx.beginPath(); ctx.moveTo(p_bird*13, p_bird*10); ctx.lineTo(p_bird*10, p_bird*12 - flap); ctx.lineTo(p_bird*9.5, p_bird*9); ctx.closePath(); ctx.fill();
+                    ctx.restore();
+                }
+             }
+             update() { this.x -= gameSpeed; }
+        }
+
+         // --- Cloud Class ---
+         class Cloud { /* ... Cloud class code from v20 ... */
+            constructor(x, y, width, height, speed) { this.x = x; this.y = y; this.width = width; this.height = height; this.speed = speed; }
+            draw() { const p = 1; const c1='#FFFFFF', c2='#F0F8FF', c3='#E0E8EF'; ctx.save(); ctx.globalAlpha = 0.8; ctx.translate(Math.round(this.x), Math.round(this.y)); ctx.fillStyle=c1; ctx.fillRect(p*5,p*5,this.width-p*10,this.height-p*10); ctx.fillRect(p*2,p*8,this.width-p*4,this.height-p*16); ctx.fillRect(p*8,p*2,this.width-p*16,this.height-p*4); ctx.fillStyle=c2; ctx.fillRect(p*6,p*6,this.width-p*12,p*3); ctx.fillStyle=c3; ctx.fillRect(p*6,this.height-p*8,this.width-p*12,p*3); ctx.fillStyle=c1; ctx.fillRect(p*3,p*6,p*2,p*4); ctx.fillRect(this.width-p*5,p*6,p*2,p*4); ctx.fillRect(p*3,this.height-p*10,p*2,p*4); ctx.fillRect(this.width-p*5,this.height-p*10,p*2,p*4); ctx.fillRect(p*6,p*3,p*4,p*2); ctx.fillRect(this.width-p*10,p*3,p*4,p*2); ctx.fillRect(p*6,this.height-p*5,p*4,p*2); ctx.fillRect(this.width-p*10,this.height-p*5,p*4,p*2); ctx.restore(); }
+            update() { this.x -= this.speed; }
+         }
+
+         // --- Coin Class (Restored) ---
+         class Coin { /* ... Coin class code from v30d ... */ constructor(x,y,r){this.x=x;this.y=y;this.radius=r;this.collected=false;} draw(){if(!this.collected){const bob=Math.sin(frameCount*0.1+this.x*0.05)*3; const cy=this.y+bob; ctx.fillStyle='gold';ctx.beginPath();ctx.arc(this.x+this.radius,cy+this.radius,this.radius,0,Math.PI*2);ctx.fill(); ctx.fillStyle='darkgoldenrod';ctx.beginPath();ctx.arc(this.x+this.radius,cy+this.radius,this.radius*0.7,0,Math.PI*2);ctx.fill();}} update(){this.x-=gameSpeed;} }
+
+        // --- Utility Functions ---
+        function showCustomAlert(message) { alert(message); }
+        function getRandomInt(min, max) { min = Math.ceil(min); max = Math.floor(max); return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+        // --- Game Functions ---
+        function setBackground(isNightTime) { /* Remains the same */ const bgColor=isNightTime?nightBgColor:dayBgColor; const bodyBg=isNightTime?nightBodyBgColor:dayBodyBgColor; const textColor=isNightTime?nightTextColor:dayTextColor; const missionText=isNightTime?nightMissionTextColor:'#555'; const missionStrong=isNightTime?nightMissionStrongColor:'#ecf0f1'; const uiBg = isNightTime ? nightUiBg : '#fff'; const uiBorder = isNightTime ? nightUiBorder : '#4a4a4a'; const msgBoxBg = isNightTime ? 'rgba(44, 62, 80, 0.95)' : 'rgba(255, 255, 255, 0.95)'; gameContainer.style.backgroundColor=bgColor; document.body.style.backgroundColor=bodyBg; document.body.style.color=textColor; document.querySelector('h1').style.color=isNightTime?'#eee':'#4a4a4a'; document.querySelectorAll('#info-display span').forEach(span => { span.style.backgroundColor = uiBg; span.style.color = textColor; span.style.borderColor = uiBorder; }); missionDisplay.style.backgroundColor = uiBg; missionDisplay.style.color = missionText; missionDisplay.style.borderColor = uiBorder; const missionStrongEl = missionDisplay.querySelector('strong'); if (missionStrongEl) missionStrongEl.style.color = missionStrong; messageBox.style.backgroundColor = msgBoxBg; messageBox.style.color = textColor; messageBox.style.borderColor = uiBorder; }
+        function drawStars() { /* Remains the same */ if(!isNight)return; ctx.fillStyle='white'; for(let i=0;i<50;i++){let x=(Math.random()*canvas.width*1.5-frameCount*0.1)%canvas.width; if(x<0)x+=canvas.width; let y=Math.random()*canvas.height*0.7; let size=Math.random()>0.8?2:1; ctx.globalAlpha=0.5+Math.sin(frameCount*0.05+i)*0.5; ctx.fillRect(x,y,size,size);} ctx.globalAlpha=1.0; }
+        function resizeCanvas() { /* Remains the same */ const container=document.getElementById('game-container'); if (!container || !canvas) return; canvas.width=container.clientWidth; canvas.height=container.clientHeight; llama.reset(); drawGround(); setBackground(isNight); if(!isGameRunning && isGameOver){ showStartMessage(); } }
+        function drawGround() { /* Remains the same */ if (!ctx) return; ctx.fillStyle=isNight?nightGroundColor:dayGroundColor; ctx.fillRect(0,canvas.height-groundHeight,canvas.width,groundHeight); ctx.fillStyle=isNight?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.1)'; for(let i=0;i<canvas.width;i+=20){ctx.fillRect(i+(Math.floor(frameCount*gameSpeed)%20),canvas.height-groundHeight+5,2,groundHeight-10);} }
+        function spawnCloud() { /* Remains the same */ const spawnChance=0.003; if(Math.random()<spawnChance){const p=1; const cw=getRandomInt(80,140)*p; const ch=getRandomInt(40,70)*p; const cy=Math.random()*(canvas.height*0.3); const cs=gameSpeed*(0.05+Math.random()*0.1); clouds.push(new Cloud(canvas.width,cy,cw,ch,cs));} }
+        function updateClouds() { /* Remains the same */ for(let i=clouds.length-1;i>=0;i--){clouds[i].update(); clouds[i].draw(); if(clouds[i].x+clouds[i].width<0){clouds.splice(i,1);}} }
+
+        // --- Obstacle Spawning (Restored Random Sizes) ---
+        function spawnObstacle() {
+             if (!isGameRunning) return;
+            const speedFactor = Math.max(0.5, 1 - (gameSpeed / 25));
+            const minGap = (190 + Math.random() * 230) * speedFactor + 140;
+            const lastObstacle = obstacles[obstacles.length - 1];
+
+             if (!lastObstacle || (canvas.width - lastObstacle.x) > minGap) {
+                const type = Math.random() < 0.6 ? 'cactus' : 'bird';
+                let obstacle;
+                if (type === 'cactus') {
+                    // Use p=2 dimensions, reduced conceptual size (Target H:46-76, W:30-40) - Slimmer Width
+                    const cactusHeight = 46 + Math.random() * 30;
+                    const cactusWidth = 30 + Math.random() * 10; // Slimmer width range (30-40)
+                    obstacle = new Obstacle(canvas.width, canvas.height - groundHeight - cactusHeight, cactusWidth, cactusHeight, 'cactus');
+                } else { // Bird
+                    // Use p_bird=2 dimensions, adjusted conceptual size (Target W:~48, H:~32)
+                    const p_bird = 2; // Match drawing scale
+                    const birdDrawWidth = 24 * p_bird; // Conceptual Width: 24
+                    const birdDrawHeight = 16 * p_bird; // Conceptual Height: 16
+                    const birdHitboxWidth = birdDrawWidth * 0.85; // Adjust hitbox
+                    const birdHitboxHeight = birdDrawHeight * 0.85; // Approx 27.2
+                    // Bird Height Calculation (For Ducking - Adjusted for new bird height & llama height)
+                    const clearance = 5; // Keep 5px clearance
+                    const birdY = canvas.height - groundHeight - llama.duckHeight - birdHitboxHeight - clearance;
+                    obstacle = new Obstacle(canvas.width, birdY, birdHitboxWidth, birdHitboxHeight, 'bird'); // Don't pass color scheme
+                }
+                obstacles.push(obstacle);
+            }
+        }
+
+         // --- Spawn Coin (Restored) ---
+         function spawnCoin() {
+             if (!isGameRunning) return;
+             const chance = 0.02;
+             const minGap = 80;
+             const lastCoin = coinObjects[coinObjects.length - 1];
+             if (Math.random() < chance) {
+                 if (!lastCoin || (canvas.width - lastCoin.x) > minGap) {
+                     const r = 10;
+                     const rf = Math.random();
+                     let y;
+                     if (rf < 0.5) { y = canvas.height-groundHeight-r*2-5; }
+                     else { y = canvas.height-groundHeight-r*2-(llama.height*0.6)-Math.random()*(llama.height*0.7); }
+                     coinObjects.push(new Coin(canvas.width, Math.max(y, r*2), r));
+                 }
+             }
+         }
+         // --- Update Obstacles (Restored with Mission Tracking) ---
+         function updateObstacles() {
+             for (let i=obstacles.length-1; i>=0; i--) {
+                 const obs = obstacles[i];
+                 const wasBehindLlama = obs.x + obs.width < llama.x; // Check if obstacle was behind before update
+                 obs.update();
+                 obs.draw(); // Use detailed draw
+                 const isNowBehindLlama = obs.x + obs.width < llama.x;
+
+                 // Check for successful jump/duck *after* obstacle passes llama
+                 if (!wasBehindLlama && isNowBehindLlama && !isGameOver) {
+                     if (obs.type === 'cactus' && llama.isJumping) { // Or check llama Y relative to obs Y
+                         cactiJumpedThisRun++;
+                         updateMissionProgress('jump_cactus', cactiJumpedThisRun);
+                     } else if (obs.type === 'bird' && llama.isDucking) { // Check if llama is ducking when bird passes
+                         birdsDuckedThisRun++;
+                          updateMissionProgress('duck_bird', birdsDuckedThisRun);
+                     }
+                 }
+
+                 if (checkCollision(llama, obs)) {
+                     handleCollision(obs);
+                 }
+                 if (obs.x + obs.width < 0) {
+                     obstacles.splice(i, 1);
+                 }
+             }
+         }
+         // --- Update Coins (Restored with Mission Tracking and Sound) ---
+         function updateCoins() {
+             const mr = isMagnetActive ? 100 : 0;
+             for (let i=coinObjects.length-1; i>=0; i--) {
+                 const c = coinObjects[i]; if (!c) continue; c.update();
+                 if (isMagnetActive && !c.collected) { const lcx=llama.x+llama.width/2; const lhy=llama.isDucking?llama.y+(llama.height-llama.duckHeight):llama.y; const lhh=llama.isDucking?llama.duckHeight:llama.height; const lcy=lhy+lhh/2; const ccx=c.x+c.radius; const ccy=c.y+c.radius; const dx=lcx-ccx; const dy=lcy-ccy; const d=Math.sqrt(dx*dx+dy*dy); if(d<mr){const ms=6; c.x+=(dx/d)*ms; c.y+=(dy/d)*ms;} } // FIXED Magnet direction
+                 c.draw(); const cr = isMagnetActive?c.radius*1.5:c.radius;
+                 if (!c.collected && checkCollision(llama, c, true, cr)) {
+                     c.collected=true; const ai=coinObjects.findIndex(x=>x===c); if(ai!==-1)coinObjects.splice(ai,1);
+                     coins++;
+                     coinsCollectedThisRun++; // Increment run-specific counter
+                     updateMissionProgress('coins', coinsCollectedThisRun); // Update coin mission
+                     if(audioReady) coinSynth.triggerAttackRelease("E6", "16n"); // Restored coin sound (higher)
+                     updateDisplays();
+                 } else if (c.x + c.radius*2 < 0) {
+                     coinObjects.splice(i, 1);
+                 }
+             }
+         }
+         // --- Check Collision (Restored) ---
+         function checkCollision(r1, r2, isC = false, cRad = 0) {
+            let r1Y = r1.isDucking ? r1.y+(r1.height-r1.duckHeight) : r1.y;
+            let r1H = r1.isDucking ? r1.duckHeight : r1.height;
+            let r1X = r1.x; let r1W = r1.width;
+            if (isC) { // Coin collision
+                let cX = r2.x+r2.radius; const bob = Math.sin(frameCount*0.1+r2.x*0.05)*3; let cY = r2.y+bob+r2.radius; let rad = cRad > 0 ? cRad : r2.radius; let clX = Math.max(r1X, Math.min(cX, r1X+r1W)); let clY = Math.max(r1Y, Math.min(cY, r1Y+r1H)); let dX = cX-clX; let dY = cY-clY; let dSq = (dX*dX)+(dY*dY); return dSq < (rad*rad);
+            } else { // Obstacle collision
+                let oX = r2.x; let oY = r2.y; let oW = r2.width; let oH = r2.height;
+                return (r1X < oX+oW && r1X+r1W > oX && r1Y < oY+oH && r1Y+r1H > oY);
+            }
+         }
+         // --- Handle Collision (Restored with Sound) ---
+         function handleCollision(obs) {
+            console.log("Collision detected!");
+            if(isShieldActive){
+                isShieldActive=false; updatePowerupIndicators(); const i=obstacles.indexOf(obs); if(i>-1)obstacles.splice(i,1);
+                if(audioReady) hitSynth.triggerAttackRelease("C4", "8n"); // Shield break sound
+                return;
+            }
+            if(extraLives>0){
+                extraLives--; updatePowerupIndicators(); obstacles=obstacles.filter(o=>o.x>llama.x+llama.width+75||o.x<llama.x-75);
+                if(audioReady) hitSynth.triggerAttackRelease("A3", "8n"); // Life lost sound
+                return;
+            }
+            if(audioReady) hitSynth.triggerAttackRelease("G2", "4n"); // Game over sound (lower)
+            gameOver();
+        }
+         // --- Update Score (Restored Mission Call) ---
+         function updateScore() {
+             if (!isGameRunning) return;
+             score = Math.floor(frameCount / 6);
+             updateMissionProgress('score', score); // Re-enabled mission update
+             updateDisplays();
+         }
+         // --- Update Displays (Restored Mission Call) ---
+         function updateDisplays() {
+             scoreDisplay.textContent=`Score: ${score}`; coinsDisplay.textContent=`Coins: ${coins} 🪙`; highScoreDisplay.textContent=`High Score: ${highScore}`; storeCoinBalance.textContent=coins; shieldOwnedDisplay.textContent=shieldsOwned; lifeOwnedDisplay.textContent=livesOwned; magnetOwnedDisplay.textContent=magnetsOwned;
+             updatePowerupIndicators();
+             updateMissionDisplay(); // Re-enabled mission display update
+             buyShieldButton.disabled = coins < shieldCost; buyLifeButton.disabled = coins < lifeCost; buyMagnetButton.disabled = coins < magnetCost;
+         }
+         function updatePowerupIndicators() { /* Remains the same */ shieldIndicator.classList.toggle('active',isShieldActive); magnetIndicator.classList.toggle('active',isMagnetActive); lifeIndicator.classList.toggle('active',extraLives>0); lifeIndicator.textContent=extraLives>0?`❤️ ${extraLives}`:'❤️';}
+         function showGameOverMessage() { /* Remains the same */ messageBox.style.display='block'; messageBox.innerHTML=`<h2>Game Over!</h2><p>Score: ${score}</p><p>High Score: ${highScore}</p><p>Total Coins: ${coins} 🪙</p>`;}
+         function gameOver() { /* Restored Game Over Sound Call */ isGameOver=true; isGameRunning=false; cancelAnimationFrame(animationFrameId); if(score>highScore){highScore=score; localStorage.setItem('llamaHighScore',highScore);} localStorage.setItem('llamaCoins',coins); localStorage.setItem('llamaShields',shieldsOwned); localStorage.setItem('llamaLives',livesOwned); localStorage.setItem('llamaMagnets',magnetsOwned); showGameOverMessage(); startButton.textContent='Restart Game'; startButton.disabled=false; jumpButton.disabled=true; duckButton.disabled=true; storeButton.disabled=false; gameSpeed=initialGameSpeed; isShieldActive=false; isMagnetActive=false; updatePowerupIndicators();}
+         function showStartMessage() { /* Remains the same */ messageBox.style.display='block'; messageBox.innerHTML=`<h2>Llama Time!</h2><p>Press Start or tap screen.</p>`; }
+
+         // --- Mission Functions (Restored) ---
+         function selectNewMission() {
+             const availableMissions = missionPool; // Simple random selection for now
+             if (availableMissions.length > 0) {
+                 activeMission = availableMissions[Math.floor(Math.random() * availableMissions.length)];
+                 missionProgress = 0;
+                 // Reset run-specific counters used by missions
+                 coinsCollectedThisRun = 0;
+                 cactiJumpedThisRun = 0;
+                 birdsDuckedThisRun = 0;
+                 console.log("New Mission Selected:", activeMission.description);
+             } else {
+                 activeMission = null; // No more missions
+                 console.log("No more missions available.");
+             }
+             updateMissionDisplay();
+         }
+
+         function updateMissionDisplay() {
+             if (activeMission) {
+                 let progressText = '';
+                 // Use the specific counter for each mission type
+                 if (activeMission.type === 'score') {
+                     progressText = `(${Math.min(score, activeMission.target)}/${activeMission.target})`; // Score is tracked directly
+                 } else if (activeMission.type === 'coins') {
+                     progressText = `(${coinsCollectedThisRun}/${activeMission.target})`;
+                 } else if (activeMission.type === 'jump_cactus') {
+                      progressText = `(${cactiJumpedThisRun}/${activeMission.target})`;
+                 } else if (activeMission.type === 'duck_bird') {
+                      progressText = `(${birdsDuckedThisRun}/${activeMission.target})`;
+                 }
+                 missionDisplay.innerHTML = `Mission: <strong>${activeMission.description}</strong> ${progressText}`;
+                 const missionStrongEl = missionDisplay.querySelector('strong');
+                 if (missionStrongEl) missionStrongEl.style.color = isNight ? nightMissionStrongColor : '#333';
+             } else {
+                 missionDisplay.textContent = "No active mission.";
+             }
+         }
+
+         function showMissionCompletePopup() { // Restored sound
+             missionCompletePopup.textContent = `Mission Complete! +${activeMission.reward} Coins 🪙`;
+             missionCompletePopup.style.display = 'block';
+             missionCompletePopup.style.opacity = 1;
+             if(audioReady) missionSynth.triggerAttackRelease("C6", "8n"); // Higher mission sound
+             setTimeout(() => {
+                 missionCompletePopup.style.opacity = 0;
+                 setTimeout(() => {
+                     missionCompletePopup.style.display = 'none';
+                 }, 500);
+             }, 2000);
+         }
+
+         function updateMissionProgress(type, value) { // Restored fully
+            // Only update if there's an active mission of the correct type and game is running
+             if (!activeMission || activeMission.type !== type || !isGameRunning) {
+                 return;
+             }
+
+             // Update internal progress based on type
+             if(type === 'score') {
+                 missionProgress = value; // Score is absolute
+             } else {
+                 missionProgress = value; // Other types use run-specific counters passed in
+             }
+
+
+             // Check completion
+             if (missionProgress >= activeMission.target) {
+                 console.log(`Mission Complete: ${activeMission.description}`);
+                 coins += activeMission.reward;
+                 localStorage.setItem('llamaCoins', coins);
+                 showMissionCompletePopup();
+                 selectNewMission(); // Select next mission immediately
+                 updateDisplays(); // Update coin display etc.
+             } else {
+                 // Update display only if mission not completed yet
+                 updateMissionDisplay();
+             }
+         }
+         // --- End Mission Functions ---
+
+         // --- Reset Game (Restored Mission Reset) ---
+         function resetGame() {
+             score=0; obstacles=[]; coinObjects=[]; clouds=[]; frameCount=0; lastScoreThreshold=0; isGameOver=false;
+             isShieldActive=false; isMagnetActive=false; magnetTimer=0; extraLives=0;
+             gameSpeed=initialGameSpeed;
+             // Auto-activate Power-ups
+             if(shieldsOwned>0){isShieldActive=true;shieldsOwned--;localStorage.setItem('llamaShields',shieldsOwned);}
+             if(livesOwned>0){extraLives=1;livesOwned--;localStorage.setItem('llamaLives',livesOwned);}
+             if(magnetsOwned>0){isMagnetActive=true;magnetTimer=magnetDuration;magnetsOwned--;localStorage.setItem('llamaMagnets',magnetsOwned);}
+             llama.reset();
+             messageBox.style.display='none';
+             startButton.disabled=true; jumpButton.disabled=false; duckButton.disabled=false; storeButton.disabled=true;
+             // Reset mission counters and select first mission
+             coinsCollectedThisRun = 0;
+             cactiJumpedThisRun = 0;
+             birdsDuckedThisRun = 0;
+             selectNewMission(); // Select mission for the new run
+             updateDisplays();
+         }
+         function gameLoop() { /* Restored features */ if(isGameOver){isGameRunning=false; return;} isGameRunning=true; const scoreCycle=Math.floor(score/700); const shouldBeNight=scoreCycle%2!==0; if(shouldBeNight!==isNight){isNight=shouldBeNight; setBackground(isNight);} ctx.clearRect(0,0,canvas.width,canvas.height); spawnCloud(); updateClouds(); drawStars(); drawGround(); llama.update(); llama.draw(); spawnObstacle(); spawnCoin(); updateObstacles(); updateCoins(); updateScore(); const currentScoreThreshold=Math.floor(score/100); if(currentScoreThreshold>lastScoreThreshold){gameSpeed+=speedIncrement; lastScoreThreshold=currentScoreThreshold;} if(isMagnetActive){magnetTimer--; if(magnetTimer<=0){isMagnetActive=false; updatePowerupIndicators();}} frameCount++; animationFrameId=requestAnimationFrame(gameLoop);}
+
+        // --- Event Listeners ---
+        window.addEventListener('resize', resizeCanvas);
+        document.addEventListener('keydown', (e) => { if(isGameOver){if(e.code==='Space'||e.code==='ArrowUp'){if(!startButton.disabled){e.preventDefault();handleGameStartInteraction();}return;}} if(isGameRunning){if(e.code==='Space'||e.code==='ArrowUp'){e.preventDefault();llama.jump();}else if(e.code==='ArrowDown'){e.preventDefault();llama.duck(true);}}});
+        document.addEventListener('keyup', (e) => { if(isGameRunning&&e.code==='ArrowDown'){e.preventDefault();llama.duck(false);}});
+
+        // --- Button Click & Start (Restored Audio) ---
+        function playUIClick(){ if(audioReady) uiClickSynth.triggerAttackRelease("A5", "16n"); } // Higher UI click
+        jumpButton.addEventListener('click', () => { playUIClick(); llama.jump(); });
+        duckButton.addEventListener('mousedown', (e)=>{ if(e.button===0) startDuck(e); });
+        duckButton.addEventListener('mouseup', (e)=>{ if(e.button===0) endDuck(e); });
+        duckButton.addEventListener('touchstart', startDuck, {passive:false});
+        duckButton.addEventListener('touchend', endDuck);
+        duckButton.addEventListener('touchcancel', endDuck);
+        duckButton.addEventListener('mouseleave', (e)=>{if(llama.isDucking)endDuck(e);});
+
+        // Function to handle starting audio context and the game (Restored)
+        function handleGameStartInteraction() {
+            if (isGameRunning && !isGameOver) return; // Don't restart if already running
+            console.log("handleGameStartInteraction called");
+            if (!audioReady) {
+                // Wrap Tone.start() in a try...catch for robustness
+                try {
+                    Tone.start().then(() => {
+                        console.log("Audio context started.");
+                        setupAudio();
+                        initiateGameStart(); // Start game after audio is ready
+                    }).catch(e => {
+                         console.error("Tone.start promise rejected:", e);
+                         // Proceed without audio if Tone.start fails
+                         initiateGameStart();
+                    });
+                } catch (e) {
+                     console.error("Error calling Tone.start():", e);
+                     // Proceed without audio if Tone.start throws error
+                     initiateGameStart();
+                }
+            } else {
+                initiateGameStart(); // Audio already ready, just start
+            }
+        }
+        startButton.addEventListener('click', handleGameStartInteraction);
+
+        function startDuck(e){if(!isGameRunning)return; e.preventDefault();console.log("Duck button down");llama.duck(true);}
+        function endDuck(e){if(!isGameRunning)return; e.preventDefault();console.log("Duck button up");llama.duck(false);}
+
+        gameContainer.addEventListener('touchstart', (e) => { console.log("Touch detected on gameContainer"); if (e.target !== canvas || messageBox.style.display === 'block') { return; } if (isGameOver && !startButton.disabled) { e.preventDefault(); handleGameStartInteraction(); return } if (isGameRunning) { e.preventDefault(); llama.jump(); } }, {passive:false});
+
+        storeButton.addEventListener('click', ()=>{ playUIClick(); if(isGameRunning)return; storeInterface.style.display='flex';updateDisplays();});
+        closeStoreButton.addEventListener('click', ()=>{ playUIClick(); storeInterface.style.display='none';});
+        buyShieldButton.addEventListener('click', ()=>{ playUIClick(); const c=shieldCost; if(coins>=c){coins-=c;shieldsOwned++;localStorage.setItem('llamaCoins',coins);localStorage.setItem('llamaShields',shieldsOwned);updateDisplays();}else{showCustomAlert("Not enough coins!");}});
+        buyLifeButton.addEventListener('click', ()=>{ playUIClick(); const c=lifeCost; if(coins>=c){coins-=c;livesOwned++;localStorage.setItem('llamaCoins',coins);localStorage.setItem('llamaLives',livesOwned);updateDisplays();}else{showCustomAlert("Not enough coins!");}});
+        buyMagnetButton.addEventListener('click', ()=>{ playUIClick(); const c=magnetCost; if(coins>=c){coins-=c;magnetsOwned++;localStorage.setItem('llamaCoins',coins);localStorage.setItem('llamaMagnets',magnetsOwned);updateDisplays();}else{showCustomAlert("Not enough coins!");}});
+
+
+        // --- PWA Install Prompt Logic ---
+        window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; installButton.style.display = 'block'; console.log('beforeinstallprompt fired'); });
+        installButton.addEventListener('click', async () => { playUIClick(); installButton.style.display = 'none'; if (!deferredPrompt) return; deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; console.log(`User response to the install prompt: ${outcome}`); deferredPrompt = null; });
+        window.addEventListener('appinstalled', () => { installButton.style.display = 'none'; deferredPrompt = null; console.log('PWA was installed'); });
+        // --- End PWA Install ---
+
+
+        // --- Initialization ---
+        function initiateGameStart() {
+             if (isGameRunning) return;
+             console.log("Initiating game start...");
+             resetGame(); // Reset state first
+             isGameRunning = true; // Set running flag
+             console.log("isGameRunning set to true");
+             if (animationFrameId) cancelAnimationFrame(animationFrameId); // Clear previous loop
+             animationFrameId = requestAnimationFrame(gameLoop); // Start the loop
+             console.log("Game loop started.");
+         }
+        window.onload = function () {
+             console.log("Window loaded. Initializing.");
+             resizeCanvas();
+             selectNewMission(); // Select first mission
+             updateDisplays(); // Call basic update
+             showStartMessage();
+             startButton.disabled = false;
+             console.log("Initialization complete.");
+         }
+
+    </script>
+</body>
+</html>
+```
+
+**2. `manifest.json`** (Ensure this file exists in the same folder as `index.html`)
+
+```json
+{
+  "name": "Llama Time!",
+  "short_name": "LlamaTime",
+  "description": "Endless runner game with a Llama!",
+  "start_url": ".",
+  "display": "standalone",
+  "orientation": "landscape-primary",
+  "background_color": "#87CEEB",
+  "theme_color": "#4a4a4a",
+  "icons": [
+    {
+      "src": "icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+       "purpose": "any maskable"
+    }
+  ]
+}
