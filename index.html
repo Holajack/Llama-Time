@@ -3,50 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#87CEEB">
-    <title>Llama Time!</title>
+    <meta name="theme-color" content="#87CEEB"> <title>Llama Time!</title>
     <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="icons/llama-icon-192.png"> <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Llama Time">
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <style>
-        /* Basic Reset */
+        /* Styles remain the same as v29b */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { height: 100%; overflow: hidden; }
         body { display: flex; flex-direction: column; align-items: center; min-height: 100vh; background-color: #f0f0f0; font-family: 'Press Start 2P', cursive; color: #333; padding: 5px; transition: background-color 0.5s ease; }
         h1 { margin-bottom: 5px; color: #4a4a4a; font-size: 1.4em; text-align: center; flex-shrink: 0; transition: color 0.5s ease; }
-
-        /* Game Container */
         #game-container { position: relative; width: 100%; max-width: 800px; aspect-ratio: 2 / 1; height: auto; border: 5px solid #4a4a4a; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 20px rgba(0,0,0,0.2); margin-bottom: 5px; flex-shrink: 0; cursor: pointer; background-color: #87CEEB; transition: background-color 0.5s ease; }
         canvas { display: block; width: 100%; height: 100%; background-color: transparent; image-rendering: pixelated; image-rendering: -moz-crisp-edges; image-rendering: crisp-edges; }
-
-        /* Score and Info Display */
         #info-display { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px; width: 100%; max-width: 800px; font-size: 0.7em; margin-bottom: 5px; padding: 0 5px; flex-shrink: 0; }
         #info-display span { background-color: #fff; color: #333; border: 2px solid #4a4a4a; padding: 4px 8px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; flex-grow: 1; transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease; }
-
-        /* Mission Display */
         #mission-display { display: block; width: 100%; max-width: 800px; background-color: #fff; color: #555; padding: 5px 8px; border-radius: 8px; border: 2px solid #4a4a4a; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; font-size: 0.6em; margin-bottom: 5px; flex-shrink: 0; min-height: 25px; transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease; }
         #mission-display strong { color: #333; transition: color 0.5s ease; }
-
-        /* Buttons */
         #controls { display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 5px; flex-wrap: wrap; flex-shrink: 0; }
         button { font-family: 'Press Start 2P', cursive; padding: 8px 12px; font-size: 0.7em; cursor: pointer; border-radius: 8px; border: 2px solid #4a4a4a; background: linear-gradient(145deg, #ffffff, #e6e6e6); box-shadow: 3px 3px 6px #c7c7c7, -3px -3px 6px #ffffff; transition: all 0.1s ease-in-out; color: #333; }
         button:active, button:focus { outline: none; box-shadow: inset 3px 3px 6px #c7c7c7, inset -3px -3px 6px #ffffff; transform: translateY(1px); }
         button:disabled { opacity: 0.6; cursor: not-allowed; background: #eee; box-shadow: none; }
         #install-button { display: none; background: linear-gradient(145deg, #a0e0a0, #70c070); border-color: #4a8a4a; box-shadow: 3px 3px 6px #8abc8a, -3px -3px 6px #c8f0c8; margin-left: 15px; }
         #install-button:active, #install-button:focus { box-shadow: inset 3px 3px 6px #8abc8a, inset -3px -3px 6px #c8f0c8; }
-
-        /* Game Over & Start Screen */
         #message-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: rgba(255, 255, 255, 0.95); color: #333; padding: 15px; border-radius: 15px; text-align: center; border: 3px solid #4a4a4a; box-shadow: 0 5px 15px rgba(0,0,0,0.2); z-index: 10; font-size: 0.9em; display: none; width: 80%; max-width: 350px; transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease; }
         #message-box h2 { margin-bottom: 8px; font-size: 1.2em; }
         #message-box p { margin-bottom: 12px; }
-
         #mission-complete-popup { position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); background-color: rgba(76, 175, 80, 0.9); color: white; padding: 8px 15px; border-radius: 10px; font-size: 0.7em; z-index: 30; display: none; opacity: 0; transition: opacity 0.5s ease-out; }
-
-        /* Store Interface */
         #store-interface { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.9); display: none; flex-direction: column; align-items: center; overflow-y: auto; z-index: 20; color: white; padding: 15px 10px; text-align: center; }
         #store-interface h2 { margin-top: 10px; margin-bottom: 10px; font-size: 1.2em; flex-shrink: 0; }
         #store-interface > p { margin-bottom: 10px; font-size: 0.8em; flex-shrink: 0; }
@@ -55,15 +40,12 @@
         .store-item p { margin-bottom: 6px; font-size: 0.7em; }
         .store-item button { font-size: 0.6em; padding: 5px 10px; margin-top: 4px; }
         #close-store { margin-top: 10px; margin-bottom: 10px; padding: 8px 15px; font-size: 0.8em; flex-shrink: 0; }
-
-        /* Power-up Indicators */
         #powerup-indicators { position: absolute; top: 5px; left: 5px; z-index: 5; display: flex; gap: 4px; }
         .indicator { font-size: 1.3em; opacity: 0.5; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); transition: opacity 0.3s ease; }
         .indicator.active { opacity: 1; animation: pulse 0.8s infinite; }
         #magnet-indicator.active { animation: pulse-magnet 0.6s infinite; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
         @keyframes pulse-magnet { 0% { transform: scale(1); text-shadow: 0 0 5px gold; } 50% { transform: scale(1.2); text-shadow: 0 0 15px gold; } 100% { transform: scale(1); text-shadow: 0 0 5px gold; } }
-
         /* --- Mobile Landscape Optimizations --- */
         @media (orientation: landscape) and (max-height: 600px), (orientation: landscape) and (max-width: 900px) {
             body { padding: 2px; justify-content: flex-start; /* Align content to top */ }
@@ -84,7 +66,6 @@
             }
              #mission-complete-popup { bottom: 30px; font-size: 0.6em; padding: 5px 10px; }
         }
-
         /* --- Mobile Portrait Optimizations --- */
         @media (orientation: portrait) and (max-width: 600px) {
             body { padding: 5px; }
@@ -95,17 +76,9 @@
             #controls { margin-bottom: 4px; gap: 6px; }
              button { padding: 6px 10px; font-size: 0.6em; }
              #install-button { padding: 6px 10px; font-size: 0.6em; margin-left: 10px;}
-
-            #game-container {
-                width: 95vw;
-                height: 50vh; /* Use significant vertical height */
-                max-width: 95vw;
-                aspect-ratio: unset; /* Override aspect ratio */
-                margin-bottom: 4px;
-            }
+            #game-container { width: 95vw; height: 50vh; max-width: 95vw; aspect-ratio: unset; margin-bottom: 4px; }
              #mission-complete-popup { bottom: 40px; font-size: 0.7em; }
         }
-
     </style>
 </head>
 <body>
@@ -183,11 +156,11 @@
 
         // --- Touch Swipe Variables ---
         let touchStartY = 0;
+        let touchStartX = 0;
         let touchEndY = 0;
-        const minSwipeDistance = 40; // Pixels needed to count as a swipe
-        let touchStartTime = 0;
-        const maxTapTime = 200; // ms to differentiate tap vs swipe start
-        let isPotentialSwipe = false; // Flag to track touch start
+        const minSwipeYDistance = 50;
+        const maxSwipeXDistance = 30;
+        let isSwipingDown = false; // Changed from isPotentialSwipe for clarity
 
         // --- Game Objects ---
         const groundHeight = 50;
@@ -195,32 +168,9 @@
         // --- Llama Object (Restored Detailed Drawing & Animation) ---
         const llama = { /* ... properties from v26 ... */
             x: 50, y: 0, drawWidth: 56, drawHeight: 56, width: 50, height: 52, dy: 0, jumpPower: -11, isJumping: false, isDucking: false, duckHeight: 30, baseY: 0, runFrame: 0, runAnimationSpeed: 6,
-            draw() { // Restored detailed drawing from v26
-                const bodyHigh='#F5E5D0', bodyLight='#EAD8BF', bodyMain='#D8B898', bodyShade='#B89878'; const legMain='#A08060', legShade='#806040', hoof='#604030'; const faceMain='#F0D0B0', earInner='#E0C0A0', eyeWhite='#FFFFFF', eyePupil='#000000', nose='#705040', hair='#907050';
-                const p = 2;
-                ctx.save(); ctx.translate(Math.round(this.x), Math.round(this.y));
-                let scaleY=1; let duckOffsetY=0; // Define scaleY here
-                if(this.isDucking){ scaleY=0.75; duckOffsetY = this.drawHeight * (1 - scaleY); ctx.translate(0,duckOffsetY); ctx.scale(1,scaleY); } // Corrected calculation
-                ctx.fillStyle=bodyMain; ctx.fillRect(p*4, p*4, p*18, p*14); ctx.fillStyle=bodyShade; ctx.fillRect(p*5, p*15, p*16, p*3); ctx.fillStyle=bodyLight; ctx.fillRect(p*5, p*4, p*16, p*3); ctx.fillStyle=bodyLight; ctx.fillRect(p*4, p*6, p*2, p*10); ctx.fillRect(p*3, p*8, p*1, p*6); ctx.fillStyle=bodyMain; ctx.fillRect(p*2, p*7, p*2, p*8); ctx.fillStyle=hair; ctx.fillRect(p*0, p*10, p*4, p*4); ctx.fillRect(p*-1, p*11, p*2, p*2);
-                ctx.fillStyle=bodyMain; ctx.fillRect(p*16, p*-1, p*6, p*8); ctx.fillStyle=bodyShade; ctx.fillRect(p*16, p*5, p*5, p*2); ctx.fillStyle=hair; ctx.fillRect(p*15, p*-4, p*7, p*5); ctx.fillRect(p*17, p*-6, p*3, p*2); ctx.fillRect(p*14, p*-1, p*3, p*3);
-                ctx.fillStyle=bodyMain; ctx.fillRect(p*19, p*-9, p*9, p*10); ctx.fillStyle=faceMain; ctx.fillRect(p*26, p*-6, p*4, p*6); ctx.fillStyle=nose; ctx.fillRect(p*28, p*-3, p*2, p*1); ctx.fillRect(p*27, p*0, p*3, p*1); ctx.fillStyle=eyeWhite; ctx.fillRect(p*23, p*-5, p*2, p*2); ctx.fillStyle=eyePupil; ctx.fillRect(p*24, p*-4, p*1, p*1); ctx.fillStyle=bodyMain; ctx.fillRect(p*19, p*-13, p*3, p*5); ctx.fillRect(p*23, p*-13, p*3, p*5); ctx.fillStyle=earInner; ctx.fillRect(p*20, p*-12, p*1, p*3); ctx.fillRect(p*24, p*-12, p*1, p*3);
-                const currentRunFrame = Math.floor(this.runFrame / this.runAnimationSpeed) % 2; const upperLegW=p*3, upperLegH=p*5, lowerLegW=p*3, lowerLegH=p*4, hoofH=p*2; const frontUpperX=p*6, frontUpperY=p*17; const backUpperX=p*14, backUpperY=p*17;
-                if(this.isJumping) { ctx.fillStyle=legShade; ctx.fillRect(frontUpperX-p*1,frontUpperY,upperLegW,upperLegH+lowerLegH); ctx.fillStyle=legMain; ctx.fillRect(frontUpperX-p*1+p,frontUpperY,upperLegW-p*2,upperLegH+lowerLegH); ctx.fillStyle=hoof; ctx.fillRect(frontUpperX-p*1,frontUpperY+upperLegH+lowerLegH,lowerLegW,hoofH); ctx.fillStyle=legShade; ctx.fillRect(backUpperX-p*1,backUpperY,upperLegW,upperLegH+lowerLegH); ctx.fillStyle=legMain; ctx.fillRect(backUpperX-p*1+p,backUpperY,upperLegW-p*2,upperLegH+lowerLegH); ctx.fillStyle=hoof; ctx.fillRect(backUpperX-p*1,backUpperY+upperLegH+lowerLegH,lowerLegW,hoofH); }
-                else if (this.isDucking) { const duckLegH=p*4; const duckHoofY=frontUpperY+duckLegH; ctx.fillStyle=legShade; ctx.fillRect(frontUpperX,frontUpperY,upperLegW,duckLegH); ctx.fillStyle=legMain; ctx.fillRect(frontUpperX+p,frontUpperY,upperLegW-p*2,duckLegH); ctx.fillStyle=hoof; ctx.fillRect(frontUpperX,duckHoofY,upperLegW,hoofH); ctx.fillStyle=legShade; ctx.fillRect(backUpperX,backUpperY,upperLegW,duckLegH); ctx.fillStyle=legMain; ctx.fillRect(backUpperX+p,backUpperY,upperLegW-p*2,duckLegH); ctx.fillStyle=hoof; ctx.fillRect(backUpperX,duckHoofY,upperLegW,hoofH); }
-                else { if(currentRunFrame === 0) { ctx.fillStyle=legShade; ctx.fillRect(frontUpperX,frontUpperY,upperLegW,upperLegH); ctx.fillRect(frontUpperX+p*2,frontUpperY+upperLegH,lowerLegW,lowerLegH); ctx.fillStyle=legMain; ctx.fillRect(frontUpperX+p,frontUpperY,upperLegW-p*2,upperLegH); ctx.fillRect(frontUpperX+p*2+p,frontUpperY+upperLegH,lowerLegW-p*2,lowerLegH); ctx.fillStyle=hoof; ctx.fillRect(frontUpperX+p*2,frontUpperY+upperLegH+lowerLegH,lowerLegW,hoofH); ctx.fillStyle=legShade; ctx.fillRect(backUpperX,backUpperY,upperLegW,upperLegH); ctx.fillRect(backUpperX-p*2,backUpperY+upperLegH,lowerLegW,lowerLegH); ctx.fillStyle=legMain; ctx.fillRect(backUpperX+p,backUpperY,upperLegW-p*2,upperLegH); ctx.fillRect(backUpperX-p*2+p,backUpperY+upperLegH,lowerLegW-p*2,lowerLegH); ctx.fillStyle=hoof; ctx.fillRect(backUpperX-p*2,backUpperY+upperLegH+lowerLegH,lowerLegW,hoofH); }
-                       else { ctx.fillStyle=legShade; ctx.fillRect(frontUpperX,frontUpperY,upperLegW,upperLegH); ctx.fillRect(frontUpperX-p*2,frontUpperY+upperLegH,lowerLegW,lowerLegH); ctx.fillStyle=legMain; ctx.fillRect(frontUpperX+p,frontUpperY,upperLegW-p*2,upperLegH); ctx.fillRect(frontUpperX-p*2+p,frontUpperY+upperLegH,lowerLegW-p*2,lowerLegH); ctx.fillStyle=hoof; ctx.fillRect(frontUpperX-p*2,frontUpperY+upperLegH+lowerLegH,lowerLegW,hoofH); ctx.fillStyle=legShade; ctx.fillRect(backUpperX,backUpperY,upperLegW,upperLegH); ctx.fillRect(backUpperX+p*2,backUpperY+upperLegH,lowerLegW,lowerLegH); ctx.fillStyle=legMain; ctx.fillRect(backUpperX+p,backUpperY,upperLegW-p*2,upperLegH); ctx.fillRect(backUpperX+p*2+p,backUpperY+upperLegH,lowerLegW-p*2,lowerLegH); ctx.fillStyle=hoof; ctx.fillRect(backUpperX+p*2,backUpperY+upperLegH+lowerLegH,lowerLegW,hoofH); } }
-                // --- Shield Visual (Restored) ---
-                if (isShieldActive) {
-                    ctx.strokeStyle = 'rgba(0, 255, 255, 0.7)'; ctx.lineWidth = 3; ctx.beginPath();
-                    let hitboxVisualY = this.isDucking ? duckOffsetY : 0;
-                    let hitboxDrawHeight = this.height * scaleY; let hitboxDrawWidth = this.width;
-                    ctx.ellipse( hitboxDrawWidth / 2, hitboxVisualY + hitboxDrawHeight / 2, (hitboxDrawWidth / 2) + 4, (hitboxDrawHeight / 2) + 4, 0, 0, Math.PI * 2 );
-                    ctx.stroke();
-                }
-                ctx.restore();
-             },
+            draw() { /* ... Detailed drawing code from v26 ... */ const bodyHigh='#F5E5D0', bodyLight='#EAD8BF', bodyMain='#D8B898', bodyShade='#B89878'; const legMain='#A08060', legShade='#806040', hoof='#604030'; const faceMain='#F0D0B0', earInner='#E0C0A0', eyeWhite='#FFFFFF', eyePupil='#000000', nose='#705040', hair='#907050'; const p = 2; ctx.save(); ctx.translate(Math.round(this.x), Math.round(this.y)); let scaleY=1; let duckOffsetY=0; if(this.isDucking){ scaleY=0.75; duckOffsetY = this.drawHeight * (1 - scaleY); ctx.translate(0,duckOffsetY); ctx.scale(1,scaleY); } ctx.fillStyle=bodyMain; ctx.fillRect(p*4, p*4, p*18, p*14); ctx.fillStyle=bodyShade; ctx.fillRect(p*5, p*15, p*16, p*3); ctx.fillStyle=bodyLight; ctx.fillRect(p*5, p*4, p*16, p*3); ctx.fillStyle=bodyLight; ctx.fillRect(p*4, p*6, p*2, p*10); ctx.fillRect(p*3, p*8, p*1, p*6); ctx.fillStyle=bodyMain; ctx.fillRect(p*2, p*7, p*2, p*8); ctx.fillStyle=hair; ctx.fillRect(p*0, p*10, p*4, p*4); ctx.fillRect(p*-1, p*11, p*2, p*2); ctx.fillStyle=bodyMain; ctx.fillRect(p*16, p*-1, p*6, p*8); ctx.fillStyle=bodyShade; ctx.fillRect(p*16, p*5, p*5, p*2); ctx.fillStyle=hair; ctx.fillRect(p*15, p*-4, p*7, p*5); ctx.fillRect(p*17, p*-6, p*3, p*2); ctx.fillRect(p*14, p*-1, p*3, p*3); ctx.fillStyle=bodyMain; ctx.fillRect(p*19, p*-9, p*9, p*10); ctx.fillStyle=faceMain; ctx.fillRect(p*26, p*-6, p*4, p*6); ctx.fillStyle=nose; ctx.fillRect(p*28, p*-3, p*2, p*1); ctx.fillRect(p*27, p*0, p*3, p*1); ctx.fillStyle=eyeWhite; ctx.fillRect(p*23, p*-5, p*2, p*2); ctx.fillStyle=eyePupil; ctx.fillRect(p*24, p*-4, p*1, p*1); ctx.fillStyle=bodyMain; ctx.fillRect(p*19, p*-13, p*3, p*5); ctx.fillRect(p*23, p*-13, p*3, p*5); ctx.fillStyle=earInner; ctx.fillRect(p*20, p*-12, p*1, p*3); ctx.fillRect(p*24, p*-12, p*1, p*3); const currentRunFrame = Math.floor(this.runFrame / this.runAnimationSpeed) % 2; const upperLegW=p*3, upperLegH=p*5, lowerLegW=p*3, lowerLegH=p*4, hoofH=p*2; const frontUpperX=p*6, frontUpperY=p*17; const backUpperX=p*14, backUpperY=p*17; if(this.isJumping) { ctx.fillStyle=legShade; ctx.fillRect(frontUpperX-p*1,frontUpperY,upperLegW,upperLegH+lowerLegH); ctx.fillStyle=legMain; ctx.fillRect(frontUpperX-p*1+p,frontUpperY,upperLegW-p*2,upperLegH+lowerLegH); ctx.fillStyle=hoof; ctx.fillRect(frontUpperX-p*1,frontUpperY+upperLegH+lowerLegH,lowerLegW,hoofH); ctx.fillStyle=legShade; ctx.fillRect(backUpperX-p*1,backUpperY,upperLegW,upperLegH+lowerLegH); ctx.fillStyle=legMain; ctx.fillRect(backUpperX-p*1+p,backUpperY,upperLegW-p*2,upperLegH+lowerLegH); ctx.fillStyle=hoof; ctx.fillRect(backUpperX-p*1,backUpperY+upperLegH+lowerLegH,lowerLegW,hoofH); } else if (this.isDucking) { const duckLegH=p*4; const duckHoofY=frontUpperY+duckLegH; ctx.fillStyle=legShade; ctx.fillRect(frontUpperX,frontUpperY,upperLegW,duckLegH); ctx.fillStyle=legMain; ctx.fillRect(frontUpperX+p,frontUpperY,upperLegW-p*2,duckLegH); ctx.fillStyle=hoof; ctx.fillRect(frontUpperX,duckHoofY,upperLegW,hoofH); ctx.fillStyle=legShade; ctx.fillRect(backUpperX,backUpperY,upperLegW,duckLegH); ctx.fillStyle=legMain; ctx.fillRect(backUpperX+p,backUpperY,upperLegW-p*2,duckLegH); ctx.fillStyle=hoof; ctx.fillRect(backUpperX,duckHoofY,upperLegW,hoofH); } else { if(currentRunFrame === 0) { ctx.fillStyle=legShade; ctx.fillRect(frontUpperX,frontUpperY,upperLegW,upperLegH); ctx.fillRect(frontUpperX+p*2,frontUpperY+upperLegH,lowerLegW,lowerLegH); ctx.fillStyle=legMain; ctx.fillRect(frontUpperX+p,frontUpperY,upperLegW-p*2,upperLegH); ctx.fillRect(frontUpperX+p*2+p,frontUpperY+upperLegH,lowerLegW-p*2,lowerLegH); ctx.fillStyle=hoof; ctx.fillRect(frontUpperX+p*2,frontUpperY+upperLegH+lowerLegH,lowerLegW,hoofH); ctx.fillStyle=legShade; ctx.fillRect(backUpperX,backUpperY,upperLegW,upperLegH); ctx.fillRect(backUpperX-p*2,backUpperY+upperLegH,lowerLegW,lowerLegH); ctx.fillStyle=legMain; ctx.fillRect(backUpperX+p,backUpperY,upperLegW-p*2,upperLegH); ctx.fillRect(backUpperX-p*2+p,backUpperY+upperLegH,lowerLegW-p*2,lowerLegH); ctx.fillStyle=hoof; ctx.fillRect(backUpperX-p*2,backUpperY+upperLegH+lowerLegH,lowerLegW,hoofH); } else { ctx.fillStyle=legShade; ctx.fillRect(frontUpperX,frontUpperY,upperLegW,upperLegH); ctx.fillRect(frontUpperX-p*2,frontUpperY+upperLegH,lowerLegW,lowerLegH); ctx.fillStyle=legMain; ctx.fillRect(frontUpperX+p,frontUpperY,upperLegW-p*2,upperLegH); ctx.fillRect(frontUpperX-p*2+p,frontUpperY+upperLegH,lowerLegW-p*2,lowerLegH); ctx.fillStyle=hoof; ctx.fillRect(frontUpperX-p*2,frontUpperY+upperLegH+lowerLegH,lowerLegW,hoofH); ctx.fillStyle=legShade; ctx.fillRect(backUpperX,backUpperY,upperLegW,upperLegH); ctx.fillRect(backUpperX+p*2,backUpperY+upperLegH,lowerLegW,lowerLegH); ctx.fillStyle=legMain; ctx.fillRect(backUpperX+p,backUpperY,upperLegW-p*2,upperLegH); ctx.fillRect(backUpperX+p*2+p,backUpperY+upperLegH,lowerLegW-p*2,lowerLegH); ctx.fillStyle=hoof; ctx.fillRect(backUpperX+p*2,backUpperY+upperLegH+lowerLegH,lowerLegW,hoofH); } } if (isShieldActive) { ctx.strokeStyle = 'rgba(0, 255, 255, 0.7)'; ctx.lineWidth = 3; ctx.beginPath(); let hitboxVisualY = this.isDucking ? duckOffsetY : 0; let hitboxDrawHeight = this.height * scaleY; let hitboxDrawWidth = this.width; ctx.ellipse( hitboxDrawWidth / 2, hitboxVisualY + hitboxDrawHeight / 2, (hitboxDrawWidth / 2) + 4, (hitboxDrawHeight / 2) + 4, 0, 0, Math.PI * 2 ); ctx.stroke(); } ctx.restore(); },
             update() { /* Restored runFrame update */ let appliedGravity = gravity; const airborne = this.y < this.baseY || this.dy > 0; if (airborne && this.isDucking) { appliedGravity *= fastFallMultiplier; } if (this.y < this.baseY || this.dy < 0) { this.dy += appliedGravity; } else { this.dy = 0; this.y = this.baseY; if (this.isJumping) { this.isJumping = false;} } this.y += this.dy; if (this.y > this.baseY) { this.y = this.baseY; this.dy = 0; if (this.isJumping) { this.isJumping = false; } } if (!this.isJumping && !this.isDucking && this.y >= this.baseY) { this.runFrame++; } else if (!this.isJumping && this.y >= this.baseY) { this.runFrame = 0; } else { this.runFrame = 0; } },
-            jump() { if (isGameRunning && !this.isJumping && !this.isDucking) { this.dy = this.jumpPower; this.isJumping = true; this.isDucking = false; if(audioReady) jumpSynth.triggerAttackRelease("F#5", "16n"); } }, // Restored jump sound (higher pitch)
+            jump() { if (isGameRunning && !this.isJumping && !this.isDucking) { this.dy = this.jumpPower; this.isJumping = true; this.isDucking = false; if(audioReady) jumpSynth.triggerAttackRelease("F#5", "16n"); } }, // Restored jump sound
             duck(shouldDuck) { if (isGameRunning) { this.isDucking = shouldDuck; } else { this.isDucking = false; } }, // Allow duck flag mid-air
             reset() { /* Remains the same */ this.baseY = canvas.height - groundHeight - this.height; this.y = this.baseY; this.dy = 0; this.isJumping = false; this.isDucking = false; this.runFrame = 0; }
         };
@@ -546,6 +496,7 @@
             if (!audioReady) {
                 // Wrap Tone.start() in a try...catch for robustness
                 try {
+                    // Use a user gesture context for Tone.start()
                     Tone.start().then(() => {
                         console.log("Audio context started.");
                         setupAudio();
@@ -569,7 +520,95 @@
         function startDuck(e){if(!isGameRunning)return; e.preventDefault();console.log("Duck button down");llama.duck(true);}
         function endDuck(e){if(!isGameRunning)return; e.preventDefault();console.log("Duck button up");llama.duck(false);}
 
-        gameContainer.addEventListener('touchstart', (e) => { console.log("Touch detected on gameContainer"); if (e.target !== canvas || messageBox.style.display === 'block') { return; } if (isGameOver && !startButton.disabled) { e.preventDefault(); handleGameStartInteraction(); return } if (isGameRunning) { e.preventDefault(); llama.jump(); } }, {passive:false});
+        // --- Touch Controls (Tap Jump / Swipe Duck - Restored) ---
+        gameContainer.addEventListener('touchstart', (e) => {
+            console.log("Touch start");
+            if (e.target !== canvas || storeInterface.style.display === 'flex' || messageBox.style.display === 'block') {
+                console.log("Touch ignored (not canvas or UI element visible)");
+                return;
+            }
+
+            if (isGameOver && !startButton.disabled) {
+                 console.log("Touch starting game");
+                 e.preventDefault(); // Prevent scroll/zoom on start
+                 handleGameStartInteraction();
+                 return
+            }
+            if (isGameRunning) {
+                e.preventDefault(); // Prevent scroll/zoom during game interaction
+                // Record start position and time for swipe/tap detection
+                touchStartY = e.changedTouches[0].screenY;
+                touchStartX = e.changedTouches[0].screenX; // Record X too
+                touchEndY = touchStartY; // Initialize endY
+                touchStartTime = Date.now();
+                isSwipingDown = false; // Reset swipe down flag
+            }
+        }, {passive: false}); // Need passive: false to call preventDefault
+
+        gameContainer.addEventListener('touchmove', (e) => {
+            if (!isGameRunning || touchStartY === 0) return; // Only track if game running and touch started
+            e.preventDefault(); // Prevent scrolling during swipe detection
+            touchEndY = e.changedTouches[0].screenY;
+            const currentX = e.changedTouches[0].screenX;
+
+            // Check for significant horizontal movement to cancel swipe detection for ducking
+            if (Math.abs(currentX - touchStartX) > maxSwipeXDistance) {
+                // console.log("Swipe cancelled due to horizontal movement");
+                // If we were ducking from swipe, stop it
+                if (isSwipingDown) {
+                     console.log("Horizontal movement detected, stopping duck.");
+                     llama.duck(false);
+                     isSwipingDown = false; // No longer considered a downward swipe
+                }
+                touchStartY = 0; // Invalidate the touch start for swipe detection
+                return;
+            }
+
+            // Check for downward swipe gesture *during* move
+            let distY = touchEndY - touchStartY;
+            if (distY > minSwipeYDistance && !isSwipingDown) {
+                console.log("Swipe Down Move detected");
+                isSwipingDown = true; // Flag that we started swiping down
+                llama.duck(true); // Start ducking (or fast fall if airborne)
+            }
+        }, {passive: false});
+
+        gameContainer.addEventListener('touchend', (e) => {
+            console.log("Touch end");
+            if (!isGameRunning || touchStartY === 0) { // Only process if game running and touch started
+                 touchStartY = 0; // Reset just in case
+                 return;
+            }
+            e.preventDefault(); // Prevent click event after touchend if we handled it
+
+            const touchEndTime = Date.now();
+            const touchDuration = touchEndTime - touchStartTime;
+            let distY = touchEndY - touchStartY;
+            let distX = e.changedTouches[0].screenX - touchStartX;
+
+            // If we were swiping down, stop ducking on touchend
+            if (isSwipingDown) {
+                console.log("Swipe Down End detected, stopping duck.");
+                llama.duck(false);
+            }
+            // Check if it was likely a Tap (short duration, minimal movement) AND not a swipe down
+            else if (touchDuration < maxTapTime && Math.abs(distX) < minSwipeDistance && Math.abs(distY) < minSwipeDistance) {
+                console.log("Tap detected for Jump");
+                llama.jump();
+            } else {
+                 console.log("Touch end - neither tap nor clear swipe down.");
+                 // If user was holding duck via button, this touchend shouldn't stop it.
+                 // If user swiped down and held, this touchend *should* stop it.
+                 // The isSwipingDown flag handles the second case.
+            }
+
+            // Reset tracking variables
+            isSwipingDown = false;
+            touchStartY = 0;
+            touchEndY = 0;
+            touchStartTime = 0;
+        });
+
 
         storeButton.addEventListener('click', ()=>{ playUIClick(); if(isGameRunning)return; storeInterface.style.display='flex';updateDisplays();});
         closeStoreButton.addEventListener('click', ()=>{ playUIClick(); storeInterface.style.display='none';});
@@ -609,32 +648,3 @@
     </script>
 </body>
 </html>
-```
-
-**2. `manifest.json`** (Ensure this file exists in the same folder as `index.html`)
-
-```json
-{
-  "name": "Llama Time!",
-  "short_name": "LlamaTime",
-  "description": "Endless runner game with a Llama!",
-  "start_url": ".",
-  "display": "standalone",
-  "orientation": "landscape-primary",
-  "background_color": "#87CEEB",
-  "theme_color": "#4a4a4a",
-  "icons": [
-    {
-      "src": "icons/icon-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "icons/icon-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-       "purpose": "any maskable"
-    }
-  ]
-}
