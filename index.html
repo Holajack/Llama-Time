@@ -11,96 +11,56 @@
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <style>
-        /* Styles remain the same as v29b */
+        /* Basic Reset */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { height: 100%; overflow: hidden; }
-        body { display: flex; flex-direction: column; align-items: center; min-height: 100vh; background-color: #f0f0f0; font-family: 'Press Start 2P', cursive; color: #333; padding: 5px; transition: background-color 0.5s ease; }
-        h1 { margin-bottom: 5px; color: #4a4a4a; font-size: 1.4em; text-align: center; flex-shrink: 0; transition: color 0.5s ease; }
-        #game-container { position: relative; width: 100%; max-width: 800px; aspect-ratio: 2 / 1; height: auto; border: 5px solid #4a4a4a; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 20px rgba(0,0,0,0.2); margin-bottom: 5px; flex-shrink: 0; cursor: pointer; background-color: #87CEEB; transition: background-color 0.5s ease; }
+        body { display: flex; flex-direction: column; align-items: center; min-height: 100vh; background-color: #f0f0f0; font-family: 'Press Start 2P', cursive; color: #333; padding: 0; /* Removed padding */ transition: background-color 0.5s ease; }
+        /* H1 removed */
+
+        /* Game Container - Make it fill screen */
+        #game-container { position: relative; width: 100vw; height: 100vh; max-width: none; border: none; border-radius: 0; overflow: hidden; cursor: pointer; background-color: #87CEEB; transition: background-color 0.5s ease; flex-shrink: 0; margin: 0; }
         canvas { display: block; width: 100%; height: 100%; background-color: transparent; image-rendering: pixelated; image-rendering: -moz-crisp-edges; image-rendering: crisp-edges; }
-        #info-display { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px; width: 100%; max-width: 800px; font-size: 0.7em; margin-bottom: 5px; padding: 0 5px; flex-shrink: 0; }
-        #info-display span { background-color: #fff; color: #333; border: 2px solid #4a4a4a; padding: 4px 8px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; flex-grow: 1; transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease; }
-        #mission-display { display: block; width: 100%; max-width: 800px; background-color: #fff; color: #555; padding: 5px 8px; border-radius: 8px; border: 2px solid #4a4a4a; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; font-size: 0.6em; margin-bottom: 5px; flex-shrink: 0; min-height: 25px; transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease; }
-        #mission-display strong { color: #333; transition: color 0.5s ease; }
-        #controls { display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 5px; flex-wrap: wrap; flex-shrink: 0; order: 4; }
-        button { font-family: 'Press Start 2P', cursive; padding: 8px 12px; font-size: 0.7em; cursor: pointer; border-radius: 8px; border: 2px solid #4a4a4a; background: linear-gradient(145deg, #ffffff, #e6e6e6); box-shadow: 3px 3px 6px #c7c7c7, -3px -3px 6px #ffffff; transition: all 0.1s ease-in-out; color: #333; }
-        button:active, button:focus { outline: none; box-shadow: inset 3px 3px 6px #c7c7c7, inset -3px -3px 6px #ffffff; transform: translateY(1px); }
-        button:disabled { opacity: 0.6; cursor: not-allowed; background: #eee; box-shadow: none; }
-        #install-button { display: none; background: linear-gradient(145deg, #a0e0a0, #70c070); border-color: #4a8a4a; box-shadow: 3px 3px 6px #8abc8a, -3px -3px 6px #c8f0c8; margin-left: 15px; }
-        #install-button:active, #install-button:focus { box-shadow: inset 3px 3px 6px #8abc8a, inset -3px -3px 6px #c8f0c8; }
-        #message-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: rgba(255, 255, 255, 0.95); color: #333; padding: 15px; border-radius: 15px; text-align: center; border: 3px solid #4a4a4a; box-shadow: 0 5px 15px rgba(0,0,0,0.2); z-index: 10; font-size: 0.9em; display: none; width: 80%; max-width: 350px; transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease; }
-        #message-box h2 { margin-bottom: 8px; font-size: 1.2em; }
-        #message-box p { margin-bottom: 12px; }
-        #mission-complete-popup { position: absolute; top: 10px; right: 10px; background-color: rgba(76, 175, 80, 0.9); color: white; padding: 8px 15px; border-radius: 10px; font-size: 0.7em; z-index: 30; display: none; opacity: 0; transition: opacity 0.5s ease-out; }
-        #store-interface { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.9); display: none; flex-direction: column; align-items: center; overflow-y: auto; z-index: 20; color: white; padding: 15px 10px; text-align: center; }
-        #store-interface h2 { margin-top: 10px; margin-bottom: 10px; font-size: 1.2em; flex-shrink: 0; }
-        #store-interface > p { margin-bottom: 10px; font-size: 0.8em; flex-shrink: 0; }
-        .store-item { background-color: #4a4a4a; padding: 8px; margin-bottom: 8px; border-radius: 8px; width: 90%; max-width: 300px; border: 2px solid #fff; flex-shrink: 0; }
-        .store-item h3 { font-size: 0.9em; margin-bottom: 4px; }
-        .store-item p { margin-bottom: 6px; font-size: 0.7em; }
-        .store-item button { font-size: 0.6em; padding: 5px 10px; margin-top: 4px; }
-        #close-store { margin-top: 10px; margin-bottom: 10px; padding: 8px 15px; font-size: 0.8em; flex-shrink: 0; }
-        #powerup-indicators { position: absolute; top: 5px; left: 5px; z-index: 5; display: flex; gap: 4px; }
-        .indicator { font-size: 1.3em; opacity: 0.35; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); transition: opacity 0.3s ease, filter 0.3s ease; filter: grayscale(50%); }
+
+        /* Info/Mission/Controls display elements removed */
+
+        /* Game Over & Start Screen (Now drawn on canvas, #message-box repurposed/hidden) */
+        #message-box { display: none; } /* Hide old message box */
+
+        /* Mission Complete Popup (Adjusted for top-right) */
+        #mission-complete-popup { position: absolute; top: 15px; right: 15px; background-color: rgba(76, 175, 80, 0.9); color: white; padding: 8px 15px; border-radius: 10px; font-size: 0.8em; z-index: 30; display: none; opacity: 0; transition: opacity 0.5s ease-out; font-family: 'Press Start 2P', cursive; }
+
+        /* Store Interface - Keep as overlay */
+        #store-interface { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 20; color: white; padding: 15px 10px; text-align: center; }
+        #store-interface h2 { margin-top: 10px; margin-bottom: 20px; font-size: 1.5em; flex-shrink: 0; }
+        #store-interface > p { margin-bottom: 15px; font-size: 1em; flex-shrink: 0; }
+        .store-item { background-color: #4a4a4a; padding: 15px; margin-bottom: 15px; border-radius: 10px; width: 90%; max-width: 350px; border: 2px solid #fff; flex-shrink: 0; }
+        .store-item h3 { font-size: 1.1em; margin-bottom: 8px; }
+        .store-item p { margin-bottom: 10px; font-size: 0.8em; }
+        .store-item button { font-family: 'Press Start 2P', cursive; font-size: 0.8em; padding: 8px 15px; margin-top: 5px; border-radius: 8px; border: 2px solid #aaa; background: #eee; color: #33; cursor: pointer;}
+        .store-item button:disabled { opacity: 0.5; cursor: not-allowed; }
+        #close-store { margin-top: 20px; padding: 10px 20px; font-size: 1em; flex-shrink: 0; font-family: 'Press Start 2P', cursive; border-radius: 8px; border: 2px solid #aaa; background: #eee; color: #33; cursor: pointer; }
+
+        /* Power-up Indicators */
+        #powerup-indicators { position: absolute; top: 10px; left: 10px; z-index: 5; display: flex; gap: 8px; }
+        .indicator { font-size: 1.8em; opacity: 0.35; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); transition: opacity 0.3s ease, filter 0.3s ease; filter: grayscale(50%); }
         .indicator.owned { opacity: 0.7; filter: grayscale(0%); }
         .indicator.active { opacity: 1; filter: grayscale(0%); animation: pulse 0.8s infinite; }
         #magnet-indicator.active { animation: pulse-magnet 0.6s infinite; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
         @keyframes pulse-magnet { 0% { transform: scale(1); text-shadow: 0 0 5px gold; } 50% { transform: scale(1.2); text-shadow: 0 0 15px gold; } 100% { transform: scale(1); text-shadow: 0 0 5px gold; } }
-        /* --- Mobile Landscape Optimizations --- */
-        @media (orientation: landscape) and (max-height: 600px), (orientation: landscape) and (max-width: 900px) {
-            body { padding: 2px; justify-content: flex-start; /* Align content to top */ }
-            h1 { font-size: 1.0em; margin-bottom: 2px; }
-            #info-display { font-size: 0.55em; margin-bottom: 2px; gap: 3px; max-width: 95vw; }
-            #info-display span { padding: 2px 5px; }
-            #mission-display { font-size: 0.5em; padding: 3px 5px; margin-bottom: 2px; min-height: 0; max-width: 95vw; }
-            #controls { margin-bottom: 2px; gap: 5px; order: 5;} /* Ensure controls are last */
-            button { padding: 5px 8px; font-size: 0.55em; border-width: 2px; }
-            #install-button { padding: 5px 8px; font-size: 0.55em; margin-left: 10px;}
-            #game-container {
-                width: 95vw; /* Prioritize width */
-                max-width: 800px; /* Still respect overall max width */
-                height: auto; /* Let height derive from aspect ratio */
-                aspect-ratio: 2.5 / 1; /* Wider aspect ratio */
-                margin-bottom: 2px;
-                border-width: 3px;
-                order: 4; /* Ensure game is before controls */
-            }
-             #mission-complete-popup { bottom: auto; top: 5px; right: 5px; font-size: 0.6em; padding: 5px 10px; } /* Adjust popup */
-        }
-        /* --- Mobile Portrait Optimizations --- */
-        @media (orientation: portrait) and (max-width: 600px) {
-            body { padding: 5px; }
-            h1 { font-size: 1.2em; margin-bottom: 4px; order: 1; }
-            #info-display { font-size: 0.6em; margin-bottom: 4px; order: 2; }
-            #info-display span { padding: 3px 6px; }
-            #mission-display { font-size: 0.55em; padding: 4px 6px; margin-bottom: 4px; order: 3; }
-            #controls { margin-bottom: 4px; gap: 6px; order: 4; } /* Controls above game */
-             button { padding: 6px 10px; font-size: 0.6em; }
-             #install-button { padding: 6px 10px; font-size: 0.6em; margin-left: 10px;}
-            #game-container {
-                width: 95vw;
-                height: 55vh; /* Adjusted height slightly */
-                max-width: 95vw;
-                aspect-ratio: unset;
-                margin-bottom: 4px;
-                order: 5; /* Game container last */
-            }
-             #mission-complete-popup { top: 5px; right: 5px; bottom: auto; left: auto; transform: none; font-size: 0.7em; } /* Top right */
-        }
+
+        /* Media queries less critical now, but keep for small adjustments */
+         @media (max-height: 400px) {
+             #mission-complete-popup { font-size: 0.6em; padding: 4px 8px; top: 5px; right: 5px; }
+             .indicator { font-size: 1.2em; }
+         }
+         @media (max-width: 400px) {
+             .indicator { font-size: 1.2em; }
+         }
+
     </style>
 </head>
 <body>
-    <h1>Llama Time!</h1>
-    <div id="info-display"> <span id="score">Score: 0</span> <span id="coins">Coins: 0 🪙</span> <span id="high-score">High Score: 0</span> </div>
-    <div id="mission-display">Loading Mission...</div>
-    <div id="controls">
-        <button id="start-button">Start Game</button>
-        <button id="jump-button" disabled>Jump (Space/Up)</button>
-        <button id="duck-button" disabled>Duck (Down)</button>
-        <button id="store-button">Store</button>
-        <button id="install-button" style="display: none;">Install App</button>
-    </div>
     <div id="game-container">
         <canvas id="gameCanvas"></canvas>
         <div id="message-box"></div>
@@ -108,7 +68,6 @@
         <div id="mission-complete-popup">Mission Complete!</div>
         <div id="store-interface"> <h2>Power-up Store</h2> <p>Your Coins: <span id="store-coin-balance">0</span> 🪙</p> <div class="store-item"> <h3>Shield (🛡️) - Cost: 50 🪙</h3> <p>Activates automatically next run!</p> <button id="buy-shield">Buy Shield</button> <p>Owned: <span id="shield-owned">0</span></p> </div> <div class="store-item"> <h3>Extra Life (❤️) - Cost: 100 🪙</h3> <p>Activates automatically next run!</p> <button id="buy-life">Buy Extra Life</button> <p>Owned: <span id="life-owned">0</span></p> </div> <div class="store-item"> <h3>Coin Magnet (🧲) - Cost: 75 🪙</h3> <p>Activates automatically next run!</p> <button id="buy-magnet">Buy Coin Magnet</button> <p>Owned: <span id="magnet-owned">0</span></p> </div> <button id="close-store">Close Store</button> </div>
     </div>
-
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -124,16 +83,24 @@
     </script>
 
     <script>
-        // --- All JavaScript code from v35c goes here ---
-        // (Including DOM Elements, Game Variables, Day/Night, Missions, Store Costs, Audio Setup,
-        // PWA Prompt, Touch Variables, Game Objects [Llama, Obstacle, Cloud, Coin],
-        // Utility Functions, Game Functions [setBackground, drawStars, resizeCanvas, etc.],
-        // Mission Functions, Game State Functions [gameOver, resetGame], gameLoop,
-        // Event Listeners, Initialization)
-        // ... (Paste the entire <script> content from v35c here) ...
-        // --- DOM Elements ---
-        const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getContext('2d'); const scoreDisplay = document.getElementById('score'); const coinsDisplay = document.getElementById('coins'); const highScoreDisplay = document.getElementById('high-score'); const messageBox = document.getElementById('message-box'); const startButton = document.getElementById('start-button'); const jumpButton = document.getElementById('jump-button'); const duckButton = document.getElementById('duck-button'); const storeButton = document.getElementById('store-button'); const closeStoreButton = document.getElementById('close-store'); const storeInterface = document.getElementById('store-interface'); const storeCoinBalance = document.getElementById('store-coin-balance'); const buyShieldButton = document.getElementById('buy-shield'); const buyLifeButton = document.getElementById('buy-life'); const buyMagnetButton = document.getElementById('buy-magnet'); const shieldOwnedDisplay = document.getElementById('shield-owned'); const lifeOwnedDisplay = document.getElementById('life-owned'); const magnetOwnedDisplay = document.getElementById('magnet-owned'); const shieldIndicator = document.getElementById('shield-indicator'); const magnetIndicator = document.getElementById('magnet-indicator'); const lifeIndicator = document.getElementById('life-indicator'); const gameContainer = document.getElementById('game-container'); const missionDisplay = document.getElementById('mission-display'); const missionCompletePopup = document.getElementById('mission-complete-popup');
-        const installButton = document.getElementById('install-button');
+        // --- DOM Elements (Reduced) ---
+        const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getContext('2d');
+        const messageBox = document.getElementById('message-box'); // Kept but hidden
+        const storeInterface = document.getElementById('store-interface');
+        const storeCoinBalance = document.getElementById('store-coin-balance');
+        const buyShieldButton = document.getElementById('buy-shield');
+        const buyLifeButton = document.getElementById('buy-life');
+        const buyMagnetButton = document.getElementById('buy-magnet');
+        const shieldOwnedDisplay = document.getElementById('shield-owned');
+        const lifeOwnedDisplay = document.getElementById('life-owned');
+        const magnetOwnedDisplay = document.getElementById('magnet-owned');
+        const closeStoreButton = document.getElementById('close-store');
+        const shieldIndicator = document.getElementById('shield-indicator');
+        const magnetIndicator = document.getElementById('magnet-indicator');
+        const lifeIndicator = document.getElementById('life-indicator');
+        const gameContainer = document.getElementById('game-container');
+        const missionCompletePopup = document.getElementById('mission-complete-popup');
+        // const installButton = document.getElementById('install-button'); // Button element removed
 
         // --- Game Variables ---
         let score = 0; let highScore = localStorage.getItem('llamaHighScore') || 0; let coins = parseInt(localStorage.getItem('llamaCoins') || 0); let shieldsOwned = parseInt(localStorage.getItem('llamaShields') || 0); let livesOwned = parseInt(localStorage.getItem('llamaLives') || 0); let magnetsOwned = parseInt(localStorage.getItem('llamaMagnets') || 0);
@@ -143,11 +110,12 @@
         let frameCount = 0; let isShieldActive = false; let isMagnetActive = false; let magnetTimer = 0; const magnetDuration = 600; let extraLives = 0;
 
         // --- Day/Night Cycle ---
-        let isNight = false; const dayBgColor = '#87CEEB'; const nightBgColor = '#2c3e50'; const dayGroundColor = '#D2B48C'; const nightGroundColor = '#B08D57'; const dayTextColor = '#333'; const nightTextColor = '#ecf0f1'; const nightMissionTextColor = '#bdc3c7'; const nightMissionStrongColor = '#ecf0f1'; const dayBodyBgColor = '#f0f0f0'; const nightBodyBgColor = '#34495e'; const nightUiBg = '#4a5a6a'; const nightUiBorder = '#7f8c8d';
+        let isNight = false; const dayBgColor = '#87CEEB'; const nightBgColor = '#2c3e50'; const dayGroundColor = '#D2B48C'; const nightGroundColor = '#B08D57'; const dayTextColor = '#333'; const nightTextColor = '#ecf0f1'; const nightMissionTextColor = '#bdc3c7'; const nightMissionStrongColor = '#ecf0f1'; const dayBodyBgColor = '#f0f0f0'; const nightBodyBgColor = '#34495e'; const nightUiBg = '#4a5a6a'; const nightUiBorder = '#7f8c8d'; const dayOutlineColor = 'rgba(0, 0, 0, 0.5)'; const nightOutlineColor = 'rgba(255, 255, 255, 0.7)';
 
         // --- Missions (Restored) ---
         const missionPool = [ { id: 'score100', description: 'Reach Score 100', target: 100, reward: 15, type: 'score' }, { id: 'collect5', description: 'Collect 5 coins', target: 5, reward: 15, type: 'coins' }, { id: 'score300', description: 'Reach Score 300', target: 300, reward: 30, type: 'score' }, { id: 'jump5cacti', description: 'Jump over 5 cacti', target: 5, reward: 35, type: 'jump_cactus' }, { id: 'collect15', description: 'Collect 15 coins', target: 15, reward: 40, type: 'coins' }, { id: 'score750', description: 'Reach Score 750', target: 750, reward: 75, type: 'score' }, { id: 'duck3birds', description: 'Duck under 3 birds', target: 3, reward: 45, type: 'duck_bird' }, { id: 'collect30', description: 'Collect 30 coins', target: 30, reward: 80, type: 'coins' }, ];
         let activeMission = null; let missionProgress = 0; let coinsCollectedThisRun = 0; let cactiJumpedThisRun = 0; let birdsDuckedThisRun = 0;
+        let missionNotificationText = ""; let missionNotificationTimer = 0; const missionNotificationDuration = 180;
 
         // --- Store Costs ---
         const shieldCost = 50; const lifeCost = 100; const magnetCost = 75;
@@ -157,35 +125,18 @@
         let audioReady = false;
 
         // --- Audio Setup (Restored) ---
-        function setupAudio() {
-            if (audioReady) return;
-            try {
-                jumpSynth = new Tone.Synth({ oscillator: { type: "square" }, volume: -8, envelope: { attack: 0.005, decay: 0.05, sustain: 0.01, release: 0.1 } }).toDestination();
-                coinSynth = new Tone.Synth({ oscillator: { type: "sine" }, volume: -10, envelope: { attack: 0.001, decay: 0.1, sustain: 0, release: 0.1 } }).toDestination();
-                hitSynth = new Tone.MembraneSynth({ pitchDecay: 0.08, octaves: 4, volume: -5, envelope: { attack: 0.001, decay: 0.3, sustain: 0.01, release: 0.5, attackCurve: "exponential" } }).toDestination();
-                uiClickSynth = new Tone.Synth({ volume: -15, oscillator: { type: "triangle" }, envelope: { attack: 0.001, decay: 0.03, sustain: 0, release: 0.05 } }).toDestination();
-                missionSynth = new Tone.Synth({ oscillator: { type: "sawtooth" }, volume: -8, envelope: { attack: 0.01, decay: 0.1, sustain: 0.1, release: 0.1 } }).toDestination();
-                audioReady = true;
-                console.log("Audio ready.");
-            } catch (err) {
-                console.error("Error setting up audio:", err);
-                audioReady = false;
-            }
-        }
+        function setupAudio() { /* ... setupAudio code from v32 ... */ if (audioReady) return; try { jumpSynth = new Tone.Synth({ oscillator: { type: "square" }, volume: -8, envelope: { attack: 0.005, decay: 0.05, sustain: 0.01, release: 0.1 } }).toDestination(); coinSynth = new Tone.Synth({ oscillator: { type: "sine" }, volume: -10, envelope: { attack: 0.001, decay: 0.1, sustain: 0, release: 0.1 } }).toDestination(); hitSynth = new Tone.MembraneSynth({ pitchDecay: 0.08, octaves: 4, volume: -5, envelope: { attack: 0.001, decay: 0.3, sustain: 0.01, release: 0.5, attackCurve: "exponential" } }).toDestination(); uiClickSynth = new Tone.Synth({ volume: -15, oscillator: { type: "triangle" }, envelope: { attack: 0.001, decay: 0.03, sustain: 0, release: 0.05 } }).toDestination(); missionSynth = new Tone.Synth({ oscillator: { type: "sawtooth" }, volume: -8, envelope: { attack: 0.01, decay: 0.1, sustain: 0.1, release: 0.1 } }).toDestination(); audioReady = true; console.log("Audio ready."); } catch (err) { console.error("Error setting up audio:", err); audioReady = false; } }
 
         // --- PWA Install Prompt ---
         let deferredPrompt;
 
         // --- Touch Swipe Variables ---
-        let touchStartX = 0;
-        let touchStartY = 0;
-        let touchEndX = 0;
-        let touchEndY = 0;
-        let touchStartTime = 0;
-        let isSwiping = false; // General flag if any swipe is in progress
-        const minSwipeYDistance = 50; // Min Y distance for a vertical swipe
-        const maxSwipeXDistance = 50; // Max X distance allowed for a vertical swipe
-        const maxTapTime = 250; // Max duration for a tap
+        let touchStartX = 0; let touchStartY = 0; let touchEndX = 0; let touchEndY = 0;
+        let touchStartTime = 0; let isSwiping = false;
+        const minSwipeYDistance = 50; const maxSwipeXDistance = 50; const maxTapTime = 250;
+
+        // --- Game Over Screen Variables ---
+        let storeButtonBounds = null; // To store clickable area for store on canvas
 
         // --- Game Objects ---
         const groundHeight = 50;
@@ -248,9 +199,9 @@
         function getRandomInt(min, max) { min = Math.ceil(min); max = Math.floor(max); return Math.floor(Math.random() * (max - min + 1)) + min; }
 
         // --- Game Functions ---
-        function setBackground(isNightTime) { /* Remains the same */ const bgColor=isNightTime?nightBgColor:dayBgColor; const bodyBg=isNightTime?nightBodyBgColor:dayBodyBgColor; const textColor=isNightTime?nightTextColor:dayTextColor; const missionText=isNightTime?nightMissionTextColor:'#555'; const missionStrong=isNightTime?nightMissionStrongColor:'#ecf0f1'; const uiBg = isNightTime ? nightUiBg : '#fff'; const uiBorder = isNightTime ? nightUiBorder : '#4a4a4a'; const msgBoxBg = isNightTime ? 'rgba(44, 62, 80, 0.95)' : 'rgba(255, 255, 255, 0.95)'; gameContainer.style.backgroundColor=bgColor; document.body.style.backgroundColor=bodyBg; document.body.style.color=textColor; document.querySelector('h1').style.color=isNightTime?'#eee':'#4a4a4a'; document.querySelectorAll('#info-display span').forEach(span => { span.style.backgroundColor = uiBg; span.style.color = textColor; span.style.borderColor = uiBorder; }); missionDisplay.style.backgroundColor = uiBg; missionDisplay.style.color = missionText; missionDisplay.style.borderColor = uiBorder; const missionStrongEl = missionDisplay.querySelector('strong'); if (missionStrongEl) missionStrongEl.style.color = missionStrong; messageBox.style.backgroundColor = msgBoxBg; messageBox.style.color = textColor; messageBox.style.borderColor = uiBorder; }
+        function setBackground(isNightTime) { /* Remains the same */ const bgColor=isNightTime?nightBgColor:dayBgColor; const bodyBg=isNightTime?nightBodyBgColor:dayBodyBgColor; const textColor=isNightTime?nightTextColor:dayTextColor; const missionText=isNightTime?nightMissionTextColor:'#555'; const missionStrong=isNightTime?nightMissionStrongColor:'#ecf0f1'; const uiBg = isNightTime ? nightUiBg : '#fff'; const uiBorder = isNightTime ? nightUiBorder : '#4a4a4a'; const msgBoxBg = isNightTime ? 'rgba(44, 62, 80, 0.95)' : 'rgba(255, 255, 255, 0.95)'; gameContainer.style.backgroundColor=bgColor; document.body.style.backgroundColor=bodyBg; document.body.style.color=textColor; /* H1 removed */ /* Info display removed */ /* Mission display removed */ messageBox.style.backgroundColor = msgBoxBg; messageBox.style.color = textColor; messageBox.style.borderColor = uiBorder; }
         function drawStars() { /* Remains the same */ if(!isNight)return; ctx.fillStyle='white'; for(let i=0;i<50;i++){let x=(Math.random()*canvas.width*1.5-frameCount*0.1)%canvas.width; if(x<0)x+=canvas.width; let y=Math.random()*canvas.height*0.7; let size=Math.random()>0.8?2:1; ctx.globalAlpha=0.5+Math.sin(frameCount*0.05+i)*0.5; ctx.fillRect(x,y,size,size);} ctx.globalAlpha=1.0; }
-        function resizeCanvas() { /* Remains the same */ const container=document.getElementById('game-container'); if (!container || !canvas) return; canvas.width=container.clientWidth; canvas.height=container.clientHeight; llama.reset(); drawGround(); setBackground(isNight); if(!isGameRunning && isGameOver){ showStartMessage(); } }
+        function resizeCanvas() { /* Remains the same */ const container=document.getElementById('game-container'); if (!container || !canvas) return; canvas.width=container.clientWidth; canvas.height=container.clientHeight; llama.reset(); drawGround(); setBackground(isNight); /* No message box show on resize */ }
         function drawGround() { /* Remains the same */ if (!ctx) return; ctx.fillStyle=isNight?nightGroundColor:dayGroundColor; ctx.fillRect(0,canvas.height-groundHeight,canvas.width,groundHeight); ctx.fillStyle=isNight?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.1)'; for(let i=0;i<canvas.width;i+=20){ctx.fillRect(i+(Math.floor(frameCount*gameSpeed)%20),canvas.height-groundHeight+5,2,groundHeight-10);} }
         function spawnCloud() { /* Remains the same */ const spawnChance=0.003; if(Math.random()<spawnChance){const p=1; const cw=getRandomInt(80,140)*p; const ch=getRandomInt(40,70)*p; const cy=Math.random()*(canvas.height*0.3); const cs=gameSpeed*(0.05+Math.random()*0.1); clouds.push(new Cloud(canvas.width,cy,cw,ch,cs));} }
         function updateClouds() { /* Remains the same */ for(let i=clouds.length-1;i>=0;i--){clouds[i].update(); clouds[i].draw(); if(clouds[i].x+clouds[i].width<0){clouds.splice(i,1);}} }
@@ -387,10 +338,20 @@
          }
          // --- Update Displays (Restored Mission Call) ---
          function updateDisplays() {
-             scoreDisplay.textContent=`Score: ${score}`; coinsDisplay.textContent=`Coins: ${coins} 🪙`; highScoreDisplay.textContent=`High Score: ${highScore}`; storeCoinBalance.textContent=coins; shieldOwnedDisplay.textContent=shieldsOwned; lifeOwnedDisplay.textContent=livesOwned; magnetOwnedDisplay.textContent=magnetsOwned;
+             // Update HTML elements (Store and Powerup Indicators still exist)
+             storeCoinBalance.textContent = coins;
+             shieldOwnedDisplay.textContent = shieldsOwned;
+             lifeOwnedDisplay.textContent = livesOwned;
+             magnetOwnedDisplay.textContent = magnetsOwned;
              updatePowerupIndicators();
              updateMissionDisplay(); // Re-enabled mission display update
-             buyShieldButton.disabled = coins < shieldCost; buyLifeButton.disabled = coins < lifeCost; buyMagnetButton.disabled = coins < magnetCost;
+
+             // Enable/disable store buttons
+             buyShieldButton.disabled = coins < shieldCost;
+             buyLifeButton.disabled = coins < lifeCost;
+             buyMagnetButton.disabled = coins < magnetCost;
+
+             // Note: Score, High Score, Coins are now drawn in drawUI()
          }
          // --- Update Powerup Indicators (FIXED: Added 'owned' class logic) ---
          function updatePowerupIndicators() {
@@ -405,47 +366,49 @@
             magnetIndicator.classList.toggle('owned', magnetsOwned > 0 && !isMagnetActive);
             lifeIndicator.classList.toggle('owned', livesOwned > 0 && !(extraLives > 0)); // Show owned only if not currently active
         }
-         function showGameOverMessage() { /* Remains the same */ messageBox.style.display='block'; messageBox.innerHTML=`<h2>Game Over!</h2><p>Score: ${score}</p><p>High Score: ${highScore}</p><p>Total Coins: ${coins} 🪙</p>`;}
-         function gameOver() { /* Restored Game Over Sound Call */ isGameOver=true; isGameRunning=false; cancelAnimationFrame(animationFrameId); if(score>highScore){highScore=score; localStorage.setItem('llamaHighScore',highScore);} localStorage.setItem('llamaCoins',coins); localStorage.setItem('llamaShields',shieldsOwned); localStorage.setItem('llamaLives',livesOwned); localStorage.setItem('llamaMagnets',magnetsOwned); showGameOverMessage(); startButton.textContent='Restart Game'; startButton.disabled=false; jumpButton.disabled=true; duckButton.disabled=true; storeButton.disabled=false; gameSpeed=initialGameSpeed; isShieldActive=false; isMagnetActive=false; updatePowerupIndicators();}
-         function showStartMessage() { /* Remains the same */ messageBox.style.display='block'; messageBox.innerHTML=`<h2>Llama Time!</h2><p>Press Start or tap screen.</p>`; }
+         function showGameOverMessage() { /* Now handled by drawGameOverOverlay */ }
+         function showStartMessage() { /* Now handled by drawGameOverOverlay */ }
+
+         function gameOver() { /* Restored Game Over Sound Call */
+            if(isGameOver) return; // Prevent multiple calls
+            console.log("Game Over triggered");
+            isGameOver=true; isGameRunning=false;
+            cancelAnimationFrame(animationFrameId);
+            if(score > highScore) { highScore = score; localStorage.setItem('llamaHighScore', highScore); }
+            localStorage.setItem('llamaCoins',coins); localStorage.setItem('llamaShields',shieldsOwned); localStorage.setItem('llamaLives',livesOwned); localStorage.setItem('llamaMagnets',magnetsOwned);
+            // Don't manipulate message box, drawGameOverOverlay handles it
+            gameSpeed=initialGameSpeed;
+            updatePowerupIndicators(); // Update indicators based on final state
+            // Redraw one last time to show game over screen immediately
+            gameLoop(); // Call one last time to draw overlay
+            isGameRunning = false; // Ensure it stays false
+        }
+
 
          // --- Mission Functions (Restored) ---
          function selectNewMission() {
-             const availableMissions = missionPool; // Simple random selection for now
+             const availableMissions = missionPool;
              if (availableMissions.length > 0) {
                  activeMission = availableMissions[Math.floor(Math.random() * availableMissions.length)];
                  missionProgress = 0;
-                 // Reset run-specific counters used by missions
-                 coinsCollectedThisRun = 0;
-                 cactiJumpedThisRun = 0;
-                 birdsDuckedThisRun = 0;
+                 coinsCollectedThisRun = 0; cactiJumpedThisRun = 0; birdsDuckedThisRun = 0;
                  console.log("New Mission Selected:", activeMission.description);
+                 // Set notification text and timer
+                 missionNotificationText = `New Mission: ${activeMission.description}`;
+                 missionNotificationTimer = missionNotificationDuration;
              } else {
-                 activeMission = null; // No more missions
+                 activeMission = null;
                  console.log("No more missions available.");
+                 missionNotificationText = ""; // Clear notification
+                 missionNotificationTimer = 0;
              }
-             updateMissionDisplay();
+             // updateMissionDisplay(); // No longer needed for HTML element
          }
 
          function updateMissionDisplay() {
-             if (activeMission) {
-                 let progressText = '';
-                 // Use the specific counter for each mission type
-                 if (activeMission.type === 'score') {
-                     progressText = `(${Math.min(score, activeMission.target)}/${activeMission.target})`; // Score is tracked directly
-                 } else if (activeMission.type === 'coins') {
-                     progressText = `(${coinsCollectedThisRun}/${activeMission.target})`;
-                 } else if (activeMission.type === 'jump_cactus') {
-                      progressText = `(${cactiJumpedThisRun}/${activeMission.target})`;
-                 } else if (activeMission.type === 'duck_bird') {
-                      progressText = `(${birdsDuckedThisRun}/${activeMission.target})`;
-                 }
-                 missionDisplay.innerHTML = `Mission: <strong>${activeMission.description}</strong> ${progressText}`;
-                 const missionStrongEl = missionDisplay.querySelector('strong');
-                 if (missionStrongEl) missionStrongEl.style.color = isNight ? nightMissionStrongColor : '#333';
-             } else {
-                 missionDisplay.textContent = "No active mission.";
-             }
+             // This function is now only needed for potential future logic,
+             // not for updating a DOM element.
+             // The actual display happens in drawUI()
          }
 
          function showMissionCompletePopup() { // Restored sound
@@ -462,36 +425,25 @@
          }
 
          function updateMissionProgress(type, value) { // Restored fully
-            // Only update if there's an active mission of the correct type and game is running
-             if (!activeMission || activeMission.type !== type || !isGameRunning) {
-                 return;
-             }
+             if (!activeMission || activeMission.type !== type || !isGameRunning) { return; }
+             if(type === 'score') { missionProgress = value; }
+             else { missionProgress = value; }
 
-             // Update internal progress based on type
-             if(type === 'score') {
-                 missionProgress = value; // Score is absolute
-             } else {
-                 missionProgress = value; // Other types use run-specific counters passed in
-             }
-
-
-             // Check completion
              if (missionProgress >= activeMission.target) {
                  console.log(`Mission Complete: ${activeMission.description}`);
                  coins += activeMission.reward;
                  localStorage.setItem('llamaCoins', coins);
                  showMissionCompletePopup();
                  selectNewMission(); // Select next mission immediately
-                 updateDisplays(); // Update coin display etc.
-             } else {
-                 // Update display only if mission not completed yet
-                 updateMissionDisplay();
+                 updateDisplays();
              }
+             // No need to call updateMissionDisplay here, drawUI handles it
          }
          // --- End Mission Functions ---
 
          // --- Reset Game (Restored Mission Reset) ---
          function resetGame() {
+             console.log("Resetting game...");
              score=0; obstacles=[]; coinObjects=[]; clouds=[]; frameCount=0; lastScoreThreshold=0; isGameOver=false;
              isShieldActive=false; isMagnetActive=false; magnetTimer=0; extraLives=0;
              gameSpeed=initialGameSpeed;
@@ -500,97 +452,291 @@
              if(livesOwned>0){extraLives=1;livesOwned--;localStorage.setItem('llamaLives',livesOwned);}
              if(magnetsOwned>0){isMagnetActive=true;magnetTimer=magnetDuration;magnetsOwned--;localStorage.setItem('llamaMagnets',magnetsOwned);}
              llama.reset();
-             messageBox.style.display='none';
-             startButton.disabled=true; jumpButton.disabled=false; duckButton.disabled=false; storeButton.disabled=true;
+             // messageBox.style.display='none'; // Handled by gameLoop check
              // Reset mission counters and select first mission
              coinsCollectedThisRun = 0;
              cactiJumpedThisRun = 0;
              birdsDuckedThisRun = 0;
              selectNewMission(); // Select mission for the new run
-             updateDisplays();
+             updateDisplays(); // Update store button states etc.
+             console.log("Game reset complete.");
          }
-         function gameLoop() { /* Restored features */ if(isGameOver){isGameRunning=false; return;} isGameRunning=true; const scoreCycle=Math.floor(score/700); const shouldBeNight=scoreCycle%2!==0; if(shouldBeNight!==isNight){isNight=shouldBeNight; setBackground(isNight);} ctx.clearRect(0,0,canvas.width,canvas.height); spawnCloud(); updateClouds(); drawStars(); drawGround(); llama.update(); llama.draw(); spawnObstacle(); spawnCoin(); updateObstacles(); updateCoins(); updateScore(); const currentScoreThreshold=Math.floor(score/100); if(currentScoreThreshold>lastScoreThreshold){gameSpeed+=speedIncrement; lastScoreThreshold=currentScoreThreshold;} if(isMagnetActive){magnetTimer--; if(magnetTimer<=0){isMagnetActive=false; updatePowerupIndicators();}} frameCount++; animationFrameId=requestAnimationFrame(gameLoop);}
+
+         // --- Draw UI Elements on Canvas ---
+         function drawUI() {
+             const padding = 15; // Increased padding
+             const fontSizeSmall = 10; // Adjusted font sizes for canvas
+             const uiFont = `${fontSizeSmall}px "Press Start 2P"`;
+
+             ctx.fillStyle = isNight ? nightTextColor : dayTextColor;
+             ctx.font = uiFont;
+
+             // Score & High Score (Top Right)
+             ctx.textAlign = 'right';
+             ctx.fillText(`HI ${highScore}`, canvas.width - padding, padding + fontSizeSmall);
+             ctx.fillText(`${score}`, canvas.width - padding, padding * 2 + fontSizeSmall * 2);
+
+             // Coins (Top Left)
+             ctx.textAlign = 'left';
+             ctx.fillText(`🪙 ${coins}`, padding, padding + fontSizeSmall);
+
+             // Mission Notification (Top Center) - Fades In/Out
+             if (missionNotificationTimer > 0) {
+                 const fadeDuration = 30; // Frames for fade in/out
+                 let alpha = 1;
+                 if (missionNotificationTimer < fadeDuration) { // Fade out
+                     alpha = missionNotificationTimer / fadeDuration;
+                 } else if (missionNotificationTimer > missionNotificationDuration - fadeDuration) { // Fade in
+                     alpha = (missionNotificationDuration - missionNotificationTimer) / fadeDuration;
+                 }
+                 alpha = Math.max(0, Math.min(1, alpha)); // Clamp alpha between 0 and 1
+
+                 ctx.textAlign = 'center';
+                 ctx.fillStyle = isNight ? `rgba(236, 240, 241, ${alpha})` : `rgba(51, 51, 51, ${alpha})`;
+                 // Adjust font size for mission text if needed
+                 ctx.font = `${fontSizeSmall * 0.9}px "Press Start 2P"`; // Slightly smaller for mission
+                 ctx.fillText(missionNotificationText, canvas.width / 2, padding + fontSizeSmall);
+                 missionNotificationTimer--;
+             }
+         }
+
+         // --- Draw Game Over Overlay ---
+         function drawGameOverOverlay() {
+             const boxWidth = Math.min(canvas.width * 0.7, 400);
+             const boxHeight = Math.min(canvas.height * 0.6, 280); // Adjusted height
+             const boxX = (canvas.width - boxWidth) / 2;
+             const boxY = (canvas.height - boxHeight) / 2;
+
+             // Semi-transparent background
+             ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
+             ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+             // Box
+             ctx.fillStyle = isNight ? nightUiBg : "rgba(255, 255, 255, 0.95)";
+             ctx.strokeStyle = isNight ? nightUiBorder : "#4a4a4a";
+             ctx.lineWidth = 3;
+             ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+             ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+
+
+             // Text
+             const padding = 20;
+             const baseFontSize = Math.max(10, Math.min(16, boxWidth / 20)); // Scale font slightly
+             const lineSpacing = baseFontSize * 2.2;
+             let currentY = boxY + padding + baseFontSize * 1.5;
+
+             ctx.fillStyle = isNight ? nightTextColor : dayTextColor;
+             ctx.font = `bold ${baseFontSize * 1.3}px "Press Start 2P"`;
+             ctx.textAlign = "center";
+             ctx.fillText("Game Over!", canvas.width / 2, currentY);
+
+             currentY += lineSpacing * 1.2;
+             ctx.font = `${baseFontSize}px "Press Start 2P"`;
+             ctx.fillText(`Score: ${score}`, canvas.width / 2, currentY);
+
+             currentY += lineSpacing * 0.8;
+             ctx.fillText(`Coins: ${coins} 🪙`, canvas.width / 2, currentY);
+
+             currentY += lineSpacing * 1.5;
+             ctx.font = `${baseFontSize * 0.9}px "Press Start 2P"`;
+             ctx.fillText("Tap to Restart", canvas.width / 2, currentY);
+
+             // Store Button Area (Draw it)
+             currentY += lineSpacing * 0.8;
+             const storeButtonHeight = baseFontSize * 2;
+             const storeButtonWidth = baseFontSize * 7;
+             const storeButtonX = (canvas.width - storeButtonWidth) / 2;
+             const storeButtonY = currentY;
+             storeButtonBounds = { // Store bounds for click detection
+                 x: storeButtonX,
+                 y: storeButtonY, // Y is top of button now
+                 width: storeButtonWidth,
+                 height: storeButtonHeight
+             };
+
+             // Draw simple button background
+             ctx.fillStyle = isNight ? 'rgba(200, 200, 200, 0.2)' : 'rgba(100, 100, 100, 0.1)';
+             ctx.fillRect(storeButtonBounds.x, storeButtonBounds.y, storeButtonBounds.width, storeButtonBounds.height);
+             ctx.fillStyle = isNight ? nightTextColor : dayTextColor;
+             // Center text vertically in button area
+             ctx.fillText("[ Store ]", canvas.width / 2, storeButtonY + storeButtonHeight * 0.65);
+
+         }
+
+
+         // --- Main Loop ---
+         function gameLoop() {
+             if (isGameOver) {
+                 // Draw Game Over Screen instead of stopping loop entirely
+                 ctx.fillStyle = isNight ? nightBgColor : dayBgColor; // Use appropriate bg color
+                 ctx.fillRect(0, 0, canvas.width, canvas.height);
+                 drawGround(); // Draw ground below overlay
+                 drawGameOverOverlay();
+                 animationFrameId = requestAnimationFrame(gameLoop);
+                 return; // Don't run game logic
+             }
+
+             // --- Game is Running ---
+             isGameRunning = true; // Ensure flag is set
+
+             // Day/Night Cycle Logic
+             const scoreCycle = Math.floor(score / 700);
+             const shouldBeNight = scoreCycle % 2 !== 0;
+             if (shouldBeNight !== isNight) {
+                 isNight = shouldBeNight;
+                 setBackground(isNight); // Update HTML element colors if any remain
+             }
+
+             // Clear Canvas
+             ctx.fillStyle = isNight ? nightBgColor : dayBgColor; // Use appropriate bg color
+             ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+             // Draw Background Elements
+             spawnCloud(); updateClouds(); drawStars(); drawGround();
+
+             // Draw Game Elements
+             llama.update(); llama.draw();
+             spawnObstacle(); spawnCoin();
+             updateObstacles(); updateCoins();
+
+             // Update Score & Speed
+             updateScore(); // Also updates displays (for store)
+             const currentScoreThreshold = Math.floor(score / 100);
+             if (currentScoreThreshold > lastScoreThreshold) {
+                 gameSpeed += speedIncrement;
+                 lastScoreThreshold = currentScoreThreshold;
+                 console.log(`Score reached ${lastScoreThreshold * 100}, Speed increased to: ${gameSpeed.toFixed(2)}`);
+             }
+
+             // Update Powerups
+             if (isMagnetActive) {
+                 magnetTimer--;
+                 if (magnetTimer <= 0) {
+                     isMagnetActive = false;
+                     updatePowerupIndicators();
+                 }
+             }
+
+             // Draw UI on top
+             drawUI();
+
+             frameCount++;
+             animationFrameId = requestAnimationFrame(gameLoop);
+         }
+
 
         // --- Event Listeners ---
         window.addEventListener('resize', resizeCanvas);
-        document.addEventListener('keydown', (e) => { if(isGameOver){if(e.code==='Space'||e.code==='ArrowUp'){if(!startButton.disabled){e.preventDefault();handleGameStartInteraction();}return;}} if(isGameRunning){if(e.code==='Space'||e.code==='ArrowUp'){e.preventDefault();llama.jump();}else if(e.code==='ArrowDown'){e.preventDefault();llama.duck(true);}}});
-        document.addEventListener('keyup', (e) => { if(isGameRunning&&e.code==='ArrowDown'){e.preventDefault();llama.duck(false);}});
+        document.addEventListener('keydown', (e) => {
+            if(isGameOver){
+                if(e.code==='Space'||e.code==='ArrowUp'){
+                     if (!storeInterface.style.display || storeInterface.style.display === 'none') { // Don't restart if store open
+                        e.preventDefault();
+                        handleGameStartInteraction();
+                    }
+                    return;
+                }
+            } else if(isGameRunning){
+                if(e.code==='Space'||e.code==='ArrowUp'){
+                    e.preventDefault();
+                    llama.jump();
+                } else if(e.code==='ArrowDown'){
+                    e.preventDefault();
+                    if (!llama.isDucking) { // Prevent multiple triggers if key held
+                        llama.duck(true);
+                    }
+                }
+            }
+        });
+        document.addEventListener('keyup', (e) => {
+             if(isGameRunning && e.code==='ArrowDown'){
+                 e.preventDefault();
+                 llama.duck(false);
+             }
+        });
 
         // --- Button Click & Start (Restored Audio) ---
         function playUIClick(){ if(audioReady) uiClickSynth.triggerAttackRelease("A5", "16n"); } // Higher UI click
-        jumpButton.addEventListener('click', () => { playUIClick(); llama.jump(); });
-        duckButton.addEventListener('mousedown', (e)=>{ if(e.button===0) startDuck(e); });
-        duckButton.addEventListener('mouseup', (e)=>{ if(e.button===0) endDuck(e); });
-        duckButton.addEventListener('touchstart', startDuck, {passive:false});
-        duckButton.addEventListener('touchend', endDuck);
-        duckButton.addEventListener('touchcancel', endDuck);
-        duckButton.addEventListener('mouseleave', (e)=>{if(llama.isDucking)endDuck(e);});
+        // jumpButton, duckButton listeners removed
 
         // Function to handle starting audio context and the game (Restored)
         function handleGameStartInteraction() {
-            if (isGameRunning && !isGameOver) return; // Don't restart if already running
+            // Only start if game is actually over or first load
+            if (isGameRunning && !isGameOver) return;
             console.log("handleGameStartInteraction called");
             if (!audioReady) {
-                // Wrap Tone.start() in a try...catch for robustness
                 try {
-                    // Use a user gesture context for Tone.start()
                     Tone.start().then(() => {
                         console.log("Audio context started.");
                         setupAudio();
-                        initiateGameStart(); // Start game after audio is ready
+                        initiateGameStart();
                     }).catch(e => {
                          console.error("Tone.start promise rejected:", e);
-                         // Proceed without audio if Tone.start fails
-                         initiateGameStart();
+                         initiateGameStart(); // Proceed without audio
                     });
                 } catch (e) {
                      console.error("Error calling Tone.start():", e);
-                     // Proceed without audio if Tone.start throws error
-                     initiateGameStart();
+                     initiateGameStart(); // Proceed without audio
                 }
             } else {
-                initiateGameStart(); // Audio already ready, just start
+                initiateGameStart(); // Audio already ready
             }
         }
-        startButton.addEventListener('click', handleGameStartInteraction);
+        // startButton listener removed
 
-        function startDuck(e){if(!isGameRunning)return; e.preventDefault();console.log("Duck button down");llama.duck(true);}
-        function endDuck(e){if(!isGameRunning)return; e.preventDefault();console.log("Duck button up");llama.duck(false);}
+        function startDuck(e){ /* Removed - handled by touch/key */ }
+        function endDuck(e){ /* Removed - handled by touch/key */ }
 
-        // --- Touch Controls (Tap Jump / Swipe Duck - Restored & Refined) ---
+        // --- Touch Controls (Tap Jump / Swipe Duck / Game Over Interaction - FIXED) ---
         gameContainer.addEventListener('touchstart', (e) => {
-            // console.log("Touch start");
-            if (e.target !== canvas || storeInterface.style.display === 'flex' || messageBox.style.display === 'block') {
-                // console.log("Touch ignored (not canvas or UI element visible)");
-                return;
+            if (storeInterface.style.display === 'flex') return; // Ignore taps if store is open
+
+            const touch = e.changedTouches[0];
+            const rect = canvas.getBoundingClientRect(); // Get canvas position for accurate tap coordinates
+
+            if (isGameOver) {
+                e.preventDefault();
+                const touchX = touch.clientX - rect.left; // Calculate tap X relative to canvas
+                const touchY = touch.clientY - rect.top;  // Calculate tap Y relative to canvas
+
+                // Check if tap is within the drawn "Store" button bounds
+                if (storeButtonBounds &&
+                    touchX >= storeButtonBounds.x &&
+                    touchX <= storeButtonBounds.x + storeButtonBounds.width &&
+                    touchY >= storeButtonBounds.y &&
+                    touchY <= storeButtonBounds.y + storeButtonBounds.height)
+                {
+                    console.log("Store button tapped on overlay");
+                    playUIClick();
+                    storeInterface.style.display = 'flex';
+                    updateDisplays(); // Update coin balance in store
+                } else {
+                    console.log("Tap starting game");
+                    handleGameStartInteraction();
+                }
+                return; // Don't process further if game over
             }
 
-            if (isGameOver && !startButton.disabled) {
-                 console.log("Touch starting game");
-                 e.preventDefault(); // Prevent scroll/zoom on start
-                 handleGameStartInteraction();
-                 return
-            }
             if (isGameRunning) {
                 // Record start position and time
-                touchStartX = e.changedTouches[0].screenX;
-                touchStartY = e.changedTouches[0].screenY;
+                touchStartX = touch.screenX;
+                touchStartY = touch.screenY;
                 touchStartTime = Date.now();
                 isSwiping = false; // Reset swipe flag for this touch sequence
-                // Don't prevent default here, do it in touchmove if needed
             }
-        }, {passive: false}); // Need passive:false to potentially call preventDefault in move/end
+        }, {passive: false});
 
         gameContainer.addEventListener('touchmove', (e) => {
             if (!isGameRunning || touchStartY === 0) return; // Only track if game running and touch started
 
-            const currentX = e.changedTouches[0].screenX;
-            const currentY = e.changedTouches[0].screenY;
+            const touch = e.changedTouches[0];
+            const currentX = touch.screenX;
+            const currentY = touch.screenY;
             let distY = currentY - touchStartY;
             let distX = currentX - touchStartX;
 
             // If significant movement (vertical or horizontal), assume swipe and prevent scrolling
-            if (Math.abs(distY) > 10 || Math.abs(distX) > 10) {
+            if (!isSwiping && (Math.abs(distY) > 10 || Math.abs(distX) > 10)) {
                  e.preventDefault(); // Prevent scrolling ONLY if movement detected
                  isSwiping = true; // Mark as swiping
             }
@@ -602,16 +748,12 @@
                     llama.duck(true); // Start ducking
                 }
             }
-        }, {passive: false}); // Need passive:false for preventDefault
+        }, {passive: false});
 
         gameContainer.addEventListener('touchend', (e) => {
-            // console.log("Touch end");
             if (!isGameRunning || touchStartY === 0) { // Only process if game running and touch started
-                 touchStartY = 0; // Reset just in case
-                 isSwiping = false;
-                 return;
+                 touchStartY = 0; isSwiping = false; return;
             }
-            // Don't prevent default here unless necessary
 
             const touchEndTime = Date.now();
             const touchDuration = touchEndTime - touchStartTime;
@@ -621,22 +763,14 @@
             let distX = touchEndX - touchStartX;
 
              // Check if it was likely a Tap (minimal movement, short duration)
-             // Make tap detection stricter: check if NOT swiping downwards primarily
              if (!isSwiping && touchDuration < maxTapTime && Math.abs(distX) < maxSwipeXDistance && Math.abs(distY) < minSwipeYDistance ) {
                 console.log("Tap detected for Jump");
                 llama.jump();
              }
             // If ducking was started by a swipe, stop it on touchend
-            else if (llama.isDucking && isSwiping && distY > minSwipeYDistance / 2 ) { // Check if still swiping down at end
+            else if (llama.isDucking && isSwiping) { // Check isSwiping to ensure duck was from swipe
                  console.log("Swipe End detected, stopping duck.");
                  llama.duck(false);
-            } else {
-                 console.log("Touch end - neither tap nor clear swipe down.");
-                 // If user was holding duck via button, this touchend shouldn't stop it.
-                 // If user swiped down and held, this touchend *should* stop it.
-                 if (llama.isDucking && isSwiping) { // If swipe ended but didn't meet tap criteria, stop duck
-                     llama.duck(false);
-                 }
             }
 
             // Reset tracking variables
@@ -647,7 +781,6 @@
         });
 
 
-        storeButton.addEventListener('click', ()=>{ playUIClick(); if(isGameRunning)return; storeInterface.style.display='flex';updateDisplays();});
         closeStoreButton.addEventListener('click', ()=>{ playUIClick(); storeInterface.style.display='none';});
         buyShieldButton.addEventListener('click', ()=>{ playUIClick(); const c=shieldCost; if(coins>=c){coins-=c;shieldsOwned++;localStorage.setItem('llamaCoins',coins);localStorage.setItem('llamaShields',shieldsOwned);updateDisplays();}else{showCustomAlert("Not enough coins!");}});
         buyLifeButton.addEventListener('click', ()=>{ playUIClick(); const c=lifeCost; if(coins>=c){coins-=c;livesOwned++;localStorage.setItem('llamaCoins',coins);localStorage.setItem('llamaLives',livesOwned);updateDisplays();}else{showCustomAlert("Not enough coins!");}});
@@ -655,9 +788,10 @@
 
 
         // --- PWA Install Prompt Logic ---
-        window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; installButton.style.display = 'block'; console.log('beforeinstallprompt fired'); });
-        installButton.addEventListener('click', async () => { playUIClick(); installButton.style.display = 'none'; if (!deferredPrompt) return; deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; console.log(`User response to the install prompt: ${outcome}`); deferredPrompt = null; });
-        window.addEventListener('appinstalled', () => { installButton.style.display = 'none'; deferredPrompt = null; console.log('PWA was installed'); });
+        window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; /* installButton.style.display = 'block'; */ console.log('beforeinstallprompt fired - install available'); }); // Install button removed
+        // installButton listener removed
+
+        window.addEventListener('appinstalled', () => { /* installButton.style.display = 'none'; */ deferredPrompt = null; console.log('PWA was installed'); });
         // --- End PWA Install ---
 
 
@@ -675,14 +809,14 @@
         window.onload = function () {
              console.log("Window loaded. Initializing.");
              resizeCanvas();
-             selectNewMission(); // Select first mission
-             updateDisplays(); // Call basic update
-             showStartMessage();
-             startButton.disabled = false;
+             // selectNewMission(); // Called in resetGame now
+             updateDisplays(); // Initial UI draw
+             // showStartMessage(); // Now handled by overlay
+             // startButton.disabled = false; // Button removed
+             gameLoop(); // Start loop immediately to show start screen overlay
              console.log("Initialization complete.");
          }
 
     </script>
 </body>
 </html>
-
