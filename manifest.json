@@ -1,0 +1,25 @@
+{
+  "name": "Llama Time!",
+  "short_name": "LlamaTime",
+  "description": "Endless runner game where a llama avoids obstacles and collects coins.",
+  "start_url": ".",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#87CEEB",
+  "theme_color": "#4a4a4a",
+  "icons": [
+    {
+      "src": "icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+       "purpose": "any maskable"
+    }
+  ]
+}
