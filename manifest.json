@@ -2,24 +2,40 @@
   "name": "Llama Time!",
   "short_name": "LlamaTime",
   "description": "Endless runner game where a llama avoids obstacles and collects coins.",
-  "start_url": ".",
-  "scope": "/",
+  "id": "/Llama-Time/", // Added recommended ID based on hosting path
+  "start_url": ".", // Relative start URL
+  "scope": "/", // Scope relative to start_url
   "display": "standalone",
-  "orientation": "any",
+  "orientation": "any", // Allows both portrait and landscape
   "background_color": "#87CEEB",
   "theme_color": "#4a4a4a",
   "icons": [
     {
-      "src": "llama-icon-192.png",
+      "src": "llama-icon-192.png", // Ensure this PNG file exists in /icons/
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "llama-icon-512.png",
+      "src": "llama-icon-512.png", // Ensure this PNG file exists in /icons/
       "sizes": "512x512",
       "type": "image/png",
        "purpose": "any maskable"
     }
+  ],
+  "screenshots" : [
+    {
+      "src": "llama-screen-mobile-1.png", // CREATE THIS IMAGE and place in /screenshots/
+      "type": "image/png",
+      "sizes": "540x720", // Example size
+      "form_factor": "narrow" // Indicate it's for mobile/narrow screens
+    },
+    {
+      "src": "llama-screen-desktop-1.png", // CREATE THIS IMAGE and place in /screenshots/
+      "type": "image/png",
+      "sizes": "1024x768", // Example size
+      "form_factor": "wide" // Indicate it's for desktop/wide screens
+    }
+    // Add more screenshots if desired
   ]
 }
