@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#87CEEB"> <title>Llama Time!</title>
     <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="icons/llama-icon-192.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="icons/llama-icon-192.png"> <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Llama Time">
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
@@ -50,16 +49,24 @@
         @keyframes pulse-magnet { 0% { transform: scale(1); text-shadow: 0 0 5px gold; } 50% { transform: scale(1.2); text-shadow: 0 0 15px gold; } 100% { transform: scale(1); text-shadow: 0 0 5px gold; } }
         /* --- Mobile Landscape Optimizations --- */
         @media (orientation: landscape) and (max-height: 600px), (orientation: landscape) and (max-width: 900px) {
-            body { padding: 2px; justify-content: flex-start; }
+            body { padding: 2px; justify-content: flex-start; /* Align content to top */ }
             h1 { font-size: 1.0em; margin-bottom: 2px; }
             #info-display { font-size: 0.55em; margin-bottom: 2px; gap: 3px; max-width: 95vw; }
             #info-display span { padding: 2px 5px; }
             #mission-display { font-size: 0.5em; padding: 3px 5px; margin-bottom: 2px; min-height: 0; max-width: 95vw; }
-            #controls { margin-bottom: 2px; gap: 5px; order: 5;}
+            #controls { margin-bottom: 2px; gap: 5px; order: 5;} /* Ensure controls are last */
             button { padding: 5px 8px; font-size: 0.55em; border-width: 2px; }
             #install-button { padding: 5px 8px; font-size: 0.55em; margin-left: 10px;}
-            #game-container { width: 95vw; max-width: 800px; height: auto; aspect-ratio: 2.5 / 1; margin-bottom: 2px; border-width: 3px; order: 4; }
-            #mission-complete-popup { bottom: auto; top: 5px; right: 5px; font-size: 0.6em; padding: 5px 10px; }
+            #game-container {
+                width: 95vw; /* Prioritize width */
+                max-width: 800px; /* Still respect overall max width */
+                height: auto; /* Let height derive from aspect ratio */
+                aspect-ratio: 2.5 / 1; /* Wider aspect ratio */
+                margin-bottom: 2px;
+                border-width: 3px;
+                order: 4; /* Ensure game is before controls */
+            }
+             #mission-complete-popup { bottom: auto; top: 5px; right: 5px; font-size: 0.6em; padding: 5px 10px; } /* Adjust popup */
         }
         /* --- Mobile Portrait Optimizations --- */
         @media (orientation: portrait) and (max-width: 600px) {
@@ -68,11 +75,18 @@
             #info-display { font-size: 0.6em; margin-bottom: 4px; order: 2; }
             #info-display span { padding: 3px 6px; }
             #mission-display { font-size: 0.55em; padding: 4px 6px; margin-bottom: 4px; order: 3; }
-            #controls { margin-bottom: 4px; gap: 6px; order: 4; }
-            button { padding: 6px 10px; font-size: 0.6em; }
-            #install-button { padding: 6px 10px; font-size: 0.6em; margin-left: 10px;}
-            #game-container { width: 95vw; height: 55vh; max-width: 95vw; aspect-ratio: unset; margin-bottom: 4px; order: 5; }
-            #mission-complete-popup { top: 5px; right: 5px; bottom: auto; left: auto; transform: none; font-size: 0.7em; }
+            #controls { margin-bottom: 4px; gap: 6px; order: 4; } /* Controls above game */
+             button { padding: 6px 10px; font-size: 0.6em; }
+             #install-button { padding: 6px 10px; font-size: 0.6em; margin-left: 10px;}
+            #game-container {
+                width: 95vw;
+                height: 55vh; /* Adjusted height slightly */
+                max-width: 95vw;
+                aspect-ratio: unset;
+                margin-bottom: 4px;
+                order: 5; /* Game container last */
+            }
+             #mission-complete-popup { top: 5px; right: 5px; bottom: auto; left: auto; transform: none; font-size: 0.7em; } /* Top right */
         }
     </style>
 </head>
@@ -110,6 +124,13 @@
     </script>
 
     <script>
+        // --- All JavaScript code from v35c goes here ---
+        // (Including DOM Elements, Game Variables, Day/Night, Missions, Store Costs, Audio Setup,
+        // PWA Prompt, Touch Variables, Game Objects [Llama, Obstacle, Cloud, Coin],
+        // Utility Functions, Game Functions [setBackground, drawStars, resizeCanvas, etc.],
+        // Mission Functions, Game State Functions [gameOver, resetGame], gameLoop,
+        // Event Listeners, Initialization)
+        // ... (Paste the entire <script> content from v35c here) ...
         // --- DOM Elements ---
         const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getContext('2d'); const scoreDisplay = document.getElementById('score'); const coinsDisplay = document.getElementById('coins'); const highScoreDisplay = document.getElementById('high-score'); const messageBox = document.getElementById('message-box'); const startButton = document.getElementById('start-button'); const jumpButton = document.getElementById('jump-button'); const duckButton = document.getElementById('duck-button'); const storeButton = document.getElementById('store-button'); const closeStoreButton = document.getElementById('close-store'); const storeInterface = document.getElementById('store-interface'); const storeCoinBalance = document.getElementById('store-coin-balance'); const buyShieldButton = document.getElementById('buy-shield'); const buyLifeButton = document.getElementById('buy-life'); const buyMagnetButton = document.getElementById('buy-magnet'); const shieldOwnedDisplay = document.getElementById('shield-owned'); const lifeOwnedDisplay = document.getElementById('life-owned'); const magnetOwnedDisplay = document.getElementById('magnet-owned'); const shieldIndicator = document.getElementById('shield-indicator'); const magnetIndicator = document.getElementById('magnet-indicator'); const lifeIndicator = document.getElementById('life-indicator'); const gameContainer = document.getElementById('game-container'); const missionDisplay = document.getElementById('mission-display'); const missionCompletePopup = document.getElementById('mission-complete-popup');
         const installButton = document.getElementById('install-button');
@@ -161,7 +182,7 @@
         let touchEndX = 0;
         let touchEndY = 0;
         let touchStartTime = 0;
-        let isSwiping = false; // Tracks if a swipe gesture is currently happening
+        let isSwiping = false; // General flag if any swipe is in progress
         const minSwipeYDistance = 50; // Min Y distance for a vertical swipe
         const maxSwipeXDistance = 50; // Max X distance allowed for a vertical swipe
         const maxTapTime = 250; // Max duration for a tap
@@ -292,11 +313,11 @@
                  const isNowBehindLlama = obs.x + obs.width < llama.x;
 
                  // Check for successful jump/duck *after* obstacle passes llama
-                 if (!wasBehindLlama && isNowBehindLlama && !isGameOver) {
-                     if (obs.type === 'cactus' && llama.isJumping) { // Or check llama Y relative to obs Y
+                 if (!wasBehindLlama && isNowBehindLlama && !isGameOver && activeMission) { // Check activeMission exists
+                     if (obs.type === 'cactus' && llama.isJumping && activeMission.type === 'jump_cactus') {
                          cactiJumpedThisRun++;
                          updateMissionProgress('jump_cactus', cactiJumpedThisRun);
-                     } else if (obs.type === 'bird' && llama.isDucking) { // Check if llama is ducking when bird passes
+                     } else if (obs.type === 'bird' && llama.isDucking && activeMission.type === 'duck_bird') {
                          birdsDuckedThisRun++;
                           updateMissionProgress('duck_bird', birdsDuckedThisRun);
                      }
@@ -664,3 +685,4 @@
     </script>
 </body>
 </html>
+
