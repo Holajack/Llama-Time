@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#87CEEB">
+  <meta name="google-adsense-account" content="ca-pub-3940397734826984">
   <title>Llama Time!</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/llama-icon-192.png">
@@ -12,6 +13,15 @@
   <meta name="apple-mobile-web-app-title" content="Llama Time">
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-68N7VH7BF2"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-68N7VH7BF2');
+  </script>
   <style>
     /* Basic Reset & Body Styles */
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -137,9 +147,8 @@
      #pause-button {
          position: absolute;
          top: 10px;
-         /* right: 10px; */ /* Removed */
-         left: 10px; /* Added */
-         z-index: 10; /* Ensure it's above indicators if needed, below modals */
+         left: 10px; /* Positioned top-left */
+         z-index: 10;
          font-size: clamp(1.5em, 5vw, 2em);
          background: rgba(255, 255, 255, 0.5);
          color: #333;
@@ -527,6 +536,12 @@
     function checkAchievements(checkDuringRun = false) { let newUnlock = false; let nightSurvivedThisRun = isNight; achievements.forEach(ach => { if (!ach.unlocked) { let criteriaMet = false; switch (ach.type) { case 'score': criteriaMet = !checkDuringRun && score >= ach.target; break; case 'highScore': criteriaMet = !checkDuringRun && highScore >= ach.target; break; case 'coinsRun': criteriaMet = !checkDuringRun && coinsCollectedThisRun >= ach.target; break; case 'totalCoins': criteriaMet = totalCoinsCollected >= ach.target; break; case 'totalJumpCactus': criteriaMet = totalCactiJumped >= ach.target; break; case 'totalDuckBird': criteriaMet = totalBirdsDucked >= ach.target; break; case 'totalShieldsUsed': criteriaMet = totalShieldsUsed >= ach.target; break; case 'surviveNight': criteriaMet = !checkDuringRun && nightSurvivedThisRun; break; case 'level': criteriaMet = playerLevel >= ach.target; break; } if (criteriaMet) { ach.unlocked = true; newUnlock = true; coins += ach.reward; showPopup(achievementPopup, `Achievement Unlocked!\n${ach.name}\n+${ach.reward} Coins!`, 3000); if(!isSoundMuted && audioReady) achievementSynth?.triggerAttackRelease("C4", "1n"); console.log(`Achievement unlocked: ${ach.name}`); } } }); if (newUnlock) { saveAchievements(); updateDisplays(); } }
     function populateAchievementModal() { achievementList.innerHTML = ''; achievements.forEach(ach => { const li = document.createElement('li'); li.classList.add('achievement-item'); li.classList.toggle('unlocked', ach.unlocked); li.classList.toggle('locked', !ach.unlocked); const status = ach.unlocked ? 'Unlocked' : 'Locked'; let progressText = ''; if (!ach.unlocked) { if (ach.type === 'totalCoins') progressText = ` (${totalCoinsCollected}/${ach.target})`; else if (ach.type === 'totalJumpCactus') progressText = ` (${totalCactiJumped}/${ach.target})`; else if (ach.type === 'totalDuckBird') progressText = ` (${totalBirdsDucked}/${ach.target})`; else if (ach.type === 'totalShieldsUsed') progressText = ` (${totalShieldsUsed}/${ach.target})`; else if (ach.type === 'level') progressText = ` (Lv ${playerLevel}/${ach.target})`; } li.innerHTML = ` <span class="status">[${status}]</span> <h4>${ach.name}</h4> <p>${ach.description}${progressText}</p> ${ach.unlocked ? `<p>Reward: ${ach.reward} 🪙</p>` : ''} `; achievementList.appendChild(li); }); }
 
+    // --- Audio Setup ---
+    function setupAudio() { if (audioReady) return; try { [jumpSynth, coinSynth, hitSynth, uiClickSynth, missionSynth, mysteryAppearSynth, mysteryCollectSynth, rewardSynth, dailyBonusSynth, coinRushSynth, levelUpSynth, achievementSynth].forEach(synth => { if (synth && typeof synth.dispose === 'function') { synth.dispose(); } }); jumpSynth = new Tone.Synth({ oscillator: { type: "square" }, volume: -8, envelope: { attack: 0.005, decay: 0.05, sustain: 0.01, release: 0.1 } }).toDestination(); coinSynth = new Tone.Synth({ oscillator: { type: "sine" }, volume: -10, envelope: { attack: 0.001, decay: 0.1, sustain: 0, release: 0.1 } }).toDestination(); hitSynth = new Tone.MembraneSynth({ pitchDecay: 0.05, octaves: 3, volume: -6, envelope: { attack: 0.001, decay: 0.2, sustain: 0.01, release: 0.4, attackCurve: "exponential" } }).toDestination(); uiClickSynth = new Tone.Synth({ volume: -15, oscillator: { type: "triangle" }, envelope: { attack: 0.001, decay: 0.03, sustain: 0, release: 0.05 } }).toDestination(); missionSynth = new Tone.Synth({ oscillator: { type: "sawtooth" }, volume: -8, envelope: { attack: 0.01, decay: 0.1, sustain: 0.1, release: 0.1 } }).toDestination(); mysteryAppearSynth = new Tone.Synth({ oscillator: { type: "pulse", width: 0.6 }, volume: -12, envelope: { attack: 0.01, decay: 0.2, sustain: 0.1, release: 0.3 } }).toDestination(); mysteryCollectSynth = new Tone.Synth({ oscillator: { type: "fmtriangle", modulationType: "sine", harmonicity: 1.5 }, volume: -9, envelope: { attack: 0.01, decay: 0.1, sustain: 0.05, release: 0.2 } }).toDestination(); rewardSynth = new Tone.PolySynth(Tone.Synth, { oscillator: { type: "triangle" }, volume: -7, envelope: { attack: 0.01, decay: 0.3, sustain: 0.1, release: 0.3 } }).toDestination(); dailyBonusSynth = new Tone.Synth({ oscillator: { type: "fatsawtooth", count: 3, spread: 20 }, volume: -6, envelope: { attack: 0.05, decay: 0.4, sustain: 0.2, release: 0.4 } }).toDestination(); coinRushSynth = new Tone.NoiseSynth({ noise: { type: "pink" }, volume: -10, envelope: { attack: 0.01, decay: 0.5, sustain: 0, release: 0.1 } }).toDestination(); levelUpSynth = new Tone.Synth({ oscillator: { type: "fatsquare", count: 4, spread: 30 }, volume: -5, envelope: { attack: 0.05, decay: 0.5, sustain: 0.3, release: 0.6 } }).toDestination(); achievementSynth = new Tone.Synth({ oscillator: { type: "pwm", modulationFrequency: 0.5 }, volume: -7, envelope: { attack: 0.02, decay: 0.6, sustain: 0.2, release: 0.5 } }).toDestination();
+        // Apply initial mute state
+        if (typeof Tone !== 'undefined' && Tone.Master) { Tone.Master.mute = isSoundMuted; }
+        audioReady = true; console.log("Audio ready."); } catch (err) { console.error("Error setting up audio:", err); audioReady = false; } }
+
     // --- Game Functions ---
     function setBackground(isNightTime) { currentBgColor = isNightTime ? nightBgColor : dayBgColor; const bodyBg = isNightTime ? nightBodyBgColor : dayBodyBgColor; gameContainer.style.backgroundColor = currentBgColor; document.body.style.backgroundColor = bodyBg; document.querySelector('meta[name="theme-color"]').setAttribute('content', isNightTime ? nightBgColor : dayBgColor); }
     function drawStars() { if(!isNight)return; ctx.fillStyle='white'; for(let i=0;i<50;i++){ let x=(Math.random()*canvas.width/currentDPR*1.5 - frameCount*0.1)%(canvas.width/currentDPR); if(x<0)x+=(canvas.width/currentDPR); let y=Math.random()*canvas.height/currentDPR*0.7; let size=Math.random()>0.8?2:1; ctx.globalAlpha=0.5+Math.sin(frameCount*0.05+i)*0.5; ctx.fillRect(Math.round(x),Math.round(y),size,size);} ctx.globalAlpha=1.0; }
@@ -541,7 +556,7 @@
         if (!isGameRunning || isPaused || isCoinRushActive) return;
         const canvasW = canvas.width / currentDPR;
         const canvasH = canvas.height / currentDPR;
-        const chance = 0.0004; // <<< REDUCED CHANCE (was 0.0015)
+        const chance = 0.0004; // <<< REDUCED CHANCE
         const minGap = 400;
         const obstacleSafetyMargin = 50;
         const spawnX = canvasW;
