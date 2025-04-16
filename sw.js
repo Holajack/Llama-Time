@@ -1,7 +1,7 @@
 // Service Worker for Llama Time PWA
 
 // Increment cache version when core assets (index.html, icons, etc.) change
-const CACHE_NAME = 'llama-time-cache-v5.1'; // <<<<<<< UPDATED CACHE VERSION
+const CACHE_NAME = 'llama-time-cache-v5.2'; // <<<<<<< UPDATED CACHE VERSION
 const urlsToCache = [
   '/', // Cache the root path
   '/index.html', // Cache index explicitly (adjust path if not in root)
