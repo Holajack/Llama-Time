@@ -23,24 +23,22 @@
     gtag('config', 'G-68N7VH7BF2');
   </script>
   <style>
-    /* Basic Reset & Body Styles -- MODIFIED */
+    /* Basic Reset & Body Styles -- Keep 100% sizing */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body {
         width: 100%;
         height: 100%;
         overflow: hidden; /* Prevent scrollbars */
-        font-family: 'Press Start 2P', cursive; /* Apply font globally */
-        background-color: #f0f0f0; /* Body background color */
+        font-family: 'Press Start 2P', cursive;
+        background-color: #f0f0f0;
         color: #333;
         transition: background-color 0.5s ease;
         -webkit-user-select: none; -ms-user-select: none; user-select: none;
     }
-    /* Removed flex centering from body */
 
-    /* Game Container & Canvas -- MODIFIED */
+    /* Game Container & Canvas -- Keep 100% sizing */
     #game-container {
       position: relative;
-      /* Use percentages to fill parent (body) */
       width: 100%;
       height: 100%;
       max-width: none;
@@ -48,13 +46,12 @@
       border-radius: 0;
       overflow: hidden;
       cursor: pointer;
-      background-color: #87CEEB; /* Default background */
+      background-color: #87CEEB;
       transition: background-color 0.5s ease;
-      flex-shrink: 0; /* Should not be needed now */
       margin: 0;
     }
     canvas {
-      display: block; /* Still important */
+      display: block;
       width: 100%;
       height: 100%;
       background-color: transparent;
@@ -403,7 +400,7 @@
     const minSwipeYDistance = 50; const maxSwipeXDistance = 50; const maxTapTime = 250;
     let storeButtonBounds = null; let achievementButtonBounds = null;
     const groundHeight = 50;
-    let currentDPR = 1;
+    // let currentDPR = 1; // No longer needed for scaling context
 
     // --- NEW: Pause State ---
     let isPaused = false;
@@ -525,7 +522,20 @@
         update() { let appliedGravity = gravity; const airborne = this.y < this.baseY || this.dy > 0; if (airborne && this.isDucking) { appliedGravity *= fastFallMultiplier; } if (this.y < this.baseY || this.dy < 0) { this.dy += appliedGravity; } else { this.dy = 0; this.y = this.baseY; if (this.isJumping) { this.isJumping = false;} } this.y += this.dy; if (this.y > this.baseY) { this.y = this.baseY; this.dy = 0; if (this.isJumping) { this.isJumping = false; } } if (!this.isJumping && !this.isDucking && this.y >= this.baseY) { this.runFrame++; } else if (!this.isJumping && this.y >= this.baseY) { this.runFrame = 0; } else { this.runFrame = 0; } },
         jump() { if (isGameRunning && !this.isJumping && !this.isDucking && this.y >= this.baseY) { this.dy = this.jumpPower; this.isJumping = true; this.isDucking = false; if(!isSoundMuted && audioReady) jumpSynth?.triggerAttackRelease("F#5", "16n"); } },
         duck(shouldDuck) { if (isGameRunning) { if(shouldDuck && this.isJumping) return; this.isDucking = shouldDuck; } else { this.isDucking = false; } },
-        reset() { const canvasH = canvas.height / currentDPR; this.baseY = canvasH - groundHeight - this.height; this.y = this.baseY; this.dy = 0; this.isJumping = false; this.isDucking = false; this.runFrame = 0; console.log(`Llama reset. CanvasH: ${canvasH.toFixed(2)}, Ground: ${groundHeight}, LlamaH: ${this.height}, BaseY: ${this.baseY.toFixed(2)}`); if (this.baseY < 0 || this.baseY > canvasH) { console.warn(`Llama baseY (${this.baseY.toFixed(2)}) might be outside canvas height (${canvasH.toFixed(2)})`); } }
+        // --- UPDATED Reset Logic --- Use canvas.height directly
+        reset() {
+            // Use direct canvas height - assuming CSS handles sizing correctly
+            this.baseY = canvas.height - groundHeight - this.height;
+            this.y = this.baseY;
+            this.dy = 0;
+            this.isJumping = false;
+            this.isDucking = false;
+            this.runFrame = 0;
+            console.log(`Llama reset. CanvasH: ${canvas.height.toFixed(2)}, Ground: ${groundHeight}, LlamaH: ${this.height}, BaseY: ${this.baseY.toFixed(2)}`);
+            if (this.baseY < 0 || this.baseY > canvas.height) {
+                 console.warn(`Llama baseY (${this.baseY.toFixed(2)}) might be outside canvas height (${canvas.height.toFixed(2)})`);
+            }
+        }
     };
 
     // --- Obstacle Class ---
@@ -554,54 +564,43 @@
 
     // --- Game Functions ---
     function setBackground(isNightTime) { currentBgColor = isNightTime ? nightBgColor : dayBgColor; const bodyBg = isNightTime ? nightBodyBgColor : dayBodyBgColor; gameContainer.style.backgroundColor = currentBgColor; document.body.style.backgroundColor = bodyBg; document.querySelector('meta[name="theme-color"]').setAttribute('content', isNightTime ? nightBgColor : dayBgColor); }
-    function drawStars() { if(!isNight)return; ctx.fillStyle='white'; for(let i=0;i<50;i++){ let x=(Math.random()*canvas.width/currentDPR*1.5 - frameCount*0.1)%(canvas.width/currentDPR); if(x<0)x+=(canvas.width/currentDPR); let y=Math.random()*canvas.height/currentDPR*0.7; let size=Math.random()>0.8?2:1; ctx.globalAlpha=0.5+Math.sin(frameCount*0.05+i)*0.5; ctx.fillRect(Math.round(x),Math.round(y),size,size);} ctx.globalAlpha=1.0; }
-    function resizeCanvas() { const container = document.getElementById('game-container'); if (!container || !canvas) return; currentDPR = window.devicePixelRatio || 1; const rect = container.getBoundingClientRect(); canvas.width = rect.width * currentDPR; canvas.height = rect.height * currentDPR; canvas.style.width = `${rect.width}px`; canvas.style.height = `${rect.height}px`; ctx.scale(currentDPR, currentDPR); const logicalWidth = canvas.width / currentDPR; const logicalHeight = canvas.height / currentDPR; llama.reset(); drawGround(); setBackground(isNight); console.log(`Canvas resized. Logical: ${logicalWidth.toFixed(0)}x${logicalHeight.toFixed(0)}, Physical: ${canvas.width}x${canvas.height}, DPR: ${currentDPR}`); if (isGameOver || !isGameRunning) { requestAnimationFrame(gameLoop); } }
-    function drawGround() { if (!ctx) return; const canvasW = canvas.width / currentDPR; const canvasH = canvas.height / currentDPR; ctx.fillStyle = isNight ? nightGroundColor : dayGroundColor; ctx.fillRect(0, canvasH - groundHeight, canvasW, groundHeight); ctx.fillStyle = isNight ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.1)'; const lineOffset = Math.floor(frameCount * gameSpeed) % 20; for(let i = -lineOffset; i < canvasW; i+=20){ ctx.fillRect(i, canvasH - groundHeight + 5, 2, groundHeight - 10); } }
-    function spawnCloud() { const spawnChance=0.003; if(Math.random()<spawnChance){ const canvasW = canvas.width / currentDPR; const canvasH = canvas.height / currentDPR; const cw=getRandomInt(80,140); const ch=getRandomInt(40,70); const cy=Math.random()*(canvasH * 0.3); const cs=gameSpeed*(0.05+Math.random()*0.1); clouds.push(new Cloud(canvasW, cy, cw, ch, cs)); } }
-    function updateClouds() { for(let i=clouds.length-1;i>=0;i--){ clouds[i].update(); clouds[i].draw(); if(clouds[i].x+clouds[i].width<0){ clouds.splice(i,1);}} }
-    function spawnObstacle() { if (!isGameRunning || isPaused || isCoinRushActive) return; const canvasW = canvas.width / currentDPR; const canvasH = canvas.height / currentDPR; const speedFactor = Math.max(0.5, 1 - (gameSpeed / 25)); const baseMinGap = 190; const randomGapAdd = 230; const absoluteMinGap = 140; const minGap = (baseMinGap + Math.random() * randomGapAdd) * speedFactor + absoluteMinGap; const lastObstacle = obstacles[obstacles.length - 1]; if (!lastObstacle || (canvasW - (lastObstacle.x + lastObstacle.width)) > minGap) { const type = Math.random() < 0.6 ? 'cactus' : 'bird'; let obstacle; if (type === 'cactus') { const cactusHeight = 46 + Math.random() * 30; const cactusWidth = 30 + Math.random() * 10; obstacle = new Obstacle( canvasW, canvasH - groundHeight - cactusHeight, cactusWidth, cactusHeight, 'cactus' ); } else { const birdHitboxWidth = 40; const birdHitboxHeight = 30; const clearance = 5; const birdY = canvasH - groundHeight - llama.duckHeight - birdHitboxHeight - clearance; obstacle = new Obstacle( canvasW, birdY, birdHitboxWidth, birdHitboxHeight, 'bird' ); } obstacles.push(obstacle); } }
-    function spawnCoin() { if (!isGameRunning || isPaused) return; const canvasW = canvas.width / currentDPR; const canvasH = canvas.height / currentDPR; let chance = 0.02; const minGap = 80; const lastCoin = coinObjects[coinObjects.length - 1]; const spawnX = canvasW; if (isCoinRushActive) { chance = 0.25; if (Math.random() < chance) { const numCoins = getRandomInt(2, 4); let startX = spawnX; if (lastCoin && (spawnX - (lastCoin.x + lastCoin.radius * 2)) < minGap * 0.5) { startX = lastCoin.x + lastCoin.radius * 2 + minGap * 0.5; } for (let i = 0; i < numCoins; i++) { const r = 10; const y = canvasH - groundHeight - r*2 - 5 - Math.random() * (llama.height * 1.2); coinObjects.push(new Coin(startX + i * (r * 2.5), Math.max(y, r*2), r)); } } return; } if (Math.random() < chance) { if (!lastCoin || (spawnX - (lastCoin.x + lastCoin.radius * 2)) > minGap) { const r = 10; const rf = Math.random(); let y; if (rf < 0.5) { y = canvasH - groundHeight - r*2 - 5; } else { const baseJumpHeight = canvasH - groundHeight - r*2 - (llama.height * 0.6); y = baseJumpHeight - Math.random()*(llama.height*0.7); } coinObjects.push(new Coin(spawnX, Math.max(y, r*2), r)); } } }
-    // --- MODIFIED: spawnMysteryBox (Reduced Chance) ---
-    function spawnMysteryBox() {
-        if (!isGameRunning || isPaused || isCoinRushActive) return;
-        const canvasW = canvas.width / currentDPR;
-        const canvasH = canvas.height / currentDPR;
-        const chance = 0.0004; // <<< REDUCED CHANCE
-        const minGap = 400;
-        const obstacleSafetyMargin = 50;
-        const spawnX = canvasW;
-        const lastBox = mysteryBoxes[mysteryBoxes.length - 1];
+    function drawStars() { if(!isNight)return; ctx.fillStyle='white'; for(let i=0;i<50;i++){ let x=(Math.random()*canvas.width*1.5 - frameCount*0.1)%(canvas.width); if(x<0)x+=(canvas.width); let y=Math.random()*canvas.height*0.7; let size=Math.random()>0.8?2:1; ctx.globalAlpha=0.5+Math.sin(frameCount*0.05+i)*0.5; ctx.fillRect(Math.round(x),Math.round(y),size,size);} ctx.globalAlpha=1.0; }
+    // --- UPDATED resizeCanvas: Removed context scaling ---
+    function resizeCanvas() {
+        const container = document.getElementById('game-container');
+        if (!container || !canvas) return;
+        const dpr = window.devicePixelRatio || 1; // Still get DPR for canvas buffer size
+        const rect = container.getBoundingClientRect();
 
-        if (Math.random() < chance) {
-            const boxGapOk = !lastBox || (spawnX - (lastBox.x + lastBox.width)) > minGap;
-            if (boxGapOk) {
-                const size = 35;
-                let y;
-                if (Math.random() < 0.5) { y = canvasH - groundHeight - size - 5; }
-                else { y = canvasH - groundHeight - size - (llama.height * 0.7) - Math.random() * (llama.height * 0.6); }
-                y = Math.max(size, y);
-                let cactusOverlap = false;
-                for (const obs of obstacles) {
-                    if (obs.type === 'cactus') {
-                        const obsRightEdge = obs.x + obs.width;
-                        const safetyDistance = size + obs.width + obstacleSafetyMargin;
-                        if (obs.x < spawnX + size + obstacleSafetyMargin && obsRightEdge > spawnX - obstacleSafetyMargin) {
-                            const boxBottom = y + size; const obsBottom = obs.y + obs.height;
-                            if (y < obsBottom && boxBottom > obs.y) {
-                                cactusOverlap = true;
-                                console.log("Mystery box spawn skipped due to cactus overlap.");
-                                break;
-                            }
-                        }
-                    }
-                }
-                if (!cactusOverlap) {
-                    mysteryBoxes.push(new MysteryBox(spawnX, y, size));
-                    if (!isSoundMuted && audioReady) mysteryAppearSynth?.triggerAttackRelease("A4", "8n");
-                }
-            }
+        // Set canvas buffer size based on DPR for resolution
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+
+        // Set display size using CSS pixels
+        canvas.style.width = `${rect.width}px`;
+        canvas.style.height = `${rect.height}px`;
+
+        // --- REMOVED --- ctx.scale(dpr, dpr);
+
+        // Now, all drawing coordinates use the physical canvas dimensions (canvas.width, canvas.height)
+        llama.reset(); // Recalculate llama's base position using physical height
+        drawGround();
+        setBackground(isNight);
+
+        console.log(`Canvas resized. Style: ${rect.width}x${rect.height}, Buffer: ${canvas.width}x${canvas.height}`);
+
+        if (isGameOver || !isGameRunning) {
+            requestAnimationFrame(gameLoop);
         }
     }
+
+    // --- UPDATED Drawing/Spawning Functions (Using physical canvas dimensions) ---
+    function drawGround() { if (!ctx) return; ctx.fillStyle = isNight ? nightGroundColor : dayGroundColor; ctx.fillRect(0, canvas.height - groundHeight, canvas.width, groundHeight); ctx.fillStyle = isNight ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.1)'; const lineOffset = Math.floor(frameCount * gameSpeed) % 20; for(let i = -lineOffset; i < canvas.width; i+=20){ ctx.fillRect(i, canvas.height - groundHeight + 5, 2, groundHeight - 10); } }
+    function spawnCloud() { const spawnChance=0.003; if(Math.random()<spawnChance){ const cw=getRandomInt(80,140); const ch=getRandomInt(40,70); const cy=Math.random()*(canvas.height * 0.3); const cs=gameSpeed*(0.05+Math.random()*0.1); clouds.push(new Cloud(canvas.width, cy, cw, ch, cs)); } }
+    function updateClouds() { for(let i=clouds.length-1;i>=0;i--){ clouds[i].update(); clouds[i].draw(); if(clouds[i].x+clouds[i].width<0){ clouds.splice(i,1);}} }
+    function spawnObstacle() { if (!isGameRunning || isPaused || isCoinRushActive) return; const speedFactor = Math.max(0.5, 1 - (gameSpeed / 25)); const baseMinGap = 190; const randomGapAdd = 230; const absoluteMinGap = 140; const minGap = (baseMinGap + Math.random() * randomGapAdd) * speedFactor + absoluteMinGap; const lastObstacle = obstacles[obstacles.length - 1]; if (!lastObstacle || (canvas.width - (lastObstacle.x + lastObstacle.width)) > minGap) { const type = Math.random() < 0.6 ? 'cactus' : 'bird'; let obstacle; if (type === 'cactus') { const cactusHeight = 46 + Math.random() * 30; const cactusWidth = 30 + Math.random() * 10; obstacle = new Obstacle( canvas.width, canvas.height - groundHeight - cactusHeight, cactusWidth, cactusHeight, 'cactus' ); } else { const birdHitboxWidth = 40; const birdHitboxHeight = 30; const clearance = 5; const birdY = canvas.height - groundHeight - llama.duckHeight - birdHitboxHeight - clearance; obstacle = new Obstacle( canvas.width, birdY, birdHitboxWidth, birdHitboxHeight, 'bird' ); } obstacles.push(obstacle); } }
+    function spawnCoin() { if (!isGameRunning || isPaused) return; let chance = 0.02; const minGap = 80; const lastCoin = coinObjects[coinObjects.length - 1]; const spawnX = canvas.width; if (isCoinRushActive) { chance = 0.25; if (Math.random() < chance) { const numCoins = getRandomInt(2, 4); let startX = spawnX; if (lastCoin && (spawnX - (lastCoin.x + lastCoin.radius * 2)) < minGap * 0.5) { startX = lastCoin.x + lastCoin.radius * 2 + minGap * 0.5; } for (let i = 0; i < numCoins; i++) { const r = 10; const y = canvas.height - groundHeight - r*2 - 5 - Math.random() * (llama.height * 1.2); coinObjects.push(new Coin(startX + i * (r * 2.5), Math.max(y, r*2), r)); } } return; } if (Math.random() < chance) { if (!lastCoin || (spawnX - (lastCoin.x + lastCoin.radius * 2)) > minGap) { const r = 10; const rf = Math.random(); let y; if (rf < 0.5) { y = canvas.height - groundHeight - r*2 - 5; } else { const baseJumpHeight = canvas.height - groundHeight - r*2 - (llama.height * 0.6); y = baseJumpHeight - Math.random()*(llama.height*0.7); } coinObjects.push(new Coin(spawnX, Math.max(y, r*2), r)); } } }
+    function spawnMysteryBox() { if (!isGameRunning || isPaused || isCoinRushActive) return; const chance = 0.0004; const minGap = 400; const obstacleSafetyMargin = 50; const spawnX = canvas.width; const lastBox = mysteryBoxes[mysteryBoxes.length - 1]; if (Math.random() < chance) { const boxGapOk = !lastBox || (spawnX - (lastBox.x + lastBox.width)) > minGap; if (boxGapOk) { const size = 35; let y; if (Math.random() < 0.5) { y = canvas.height - groundHeight - size - 5; } else { y = canvas.height - groundHeight - size - (llama.height * 0.7) - Math.random() * (llama.height * 0.6); } y = Math.max(size, y); let cactusOverlap = false; for (const obs of obstacles) { if (obs.type === 'cactus') { const obsRightEdge = obs.x + obs.width; const safetyDistance = size + obs.width + obstacleSafetyMargin; if (obs.x < spawnX + size + obstacleSafetyMargin && obsRightEdge > spawnX - obstacleSafetyMargin) { const boxBottom = y + size; const obsBottom = obs.y + obs.height; if (y < obsBottom && boxBottom > obs.y) { cactusOverlap = true; console.log("Mystery box spawn skipped due to cactus overlap."); break; } } } } if (!cactusOverlap) { mysteryBoxes.push(new MysteryBox(spawnX, y, size)); if(!isSoundMuted && audioReady) mysteryAppearSynth?.triggerAttackRelease("A4", "8n"); } } } }
     function updateObstacles() { for (let i=obstacles.length-1; i>=0; i--) { const obs = obstacles[i]; if (!obs) continue; const wasBehindLlama = obs.x + obs.width < llama.x; obs.update(); obs.draw(); const isNowBehindLlama = obs.x + obs.width < llama.x; if (!wasBehindLlama && isNowBehindLlama && !isGameOver) { if (obs.type === 'cactus' && llama.isJumping) { cactiJumpedThisRun++; totalCactiJumped++; updateMissionProgress('jump_cactus', cactiJumpedThisRun); } else if (obs.type === 'bird' && llama.isDucking) { birdsDuckedThisRun++; totalBirdsDucked++; updateMissionProgress('duck_bird', birdsDuckedThisRun); } } if (checkCollision(llama, obs)) { handleCollision(obs); if (isGameOver) return; } if (obs.x + obs.width < 0) { obstacles.splice(i, 1); } } }
     function updateCoins() { const magnetRadius = isMagnetActive ? 100 : 0; for (let i=coinObjects.length-1; i>=0; i--) { const c = coinObjects[i]; if (!c) continue; c.update(); if (isMagnetActive && !c.collected) { const llamaCenterX = llama.x + llama.width / 2; const llamaHitboxY = llama.isDucking ? llama.y + (llama.height - llama.duckHeight) : llama.y; const llamaHitboxHeight = llama.isDucking ? llama.duckHeight : llama.height; const llamaCenterY = llamaHitboxY + llamaHitboxHeight / 2; const coinCenterX = c.x + c.radius; const coinCenterY = c.y + c.radius; const dx = llamaCenterX - coinCenterX; const dy = llamaCenterY - coinCenterY; const distance = Math.sqrt(dx*dx + dy*dy); if(distance < magnetRadius){ const magnetSpeed = 6; c.x += (dx / distance) * magnetSpeed; c.y += (dy / distance) * magnetSpeed;} } c.draw(); const effectiveRadius = isMagnetActive ? c.radius * 1.5 : c.radius; if (!c.collected && checkCollision(llama, c, true, effectiveRadius)) { c.collected=true; const indexToRemove = coinObjects.findIndex(coin => coin === c); if(indexToRemove !== -1) coinObjects.splice(indexToRemove,1); const coinValue = isDoubleCoinsBoostActive ? 2 : 1; coins += coinValue; coinsCollectedThisRun += coinValue; totalCoinsCollected += coinValue; updateMissionProgress('coins', coinsCollectedThisRun); if(!isSoundMuted && audioReady) coinSynth.triggerAttackRelease("E6", "16n"); updateDisplays(); } else if (c.x + c.radius*2 < 0) { coinObjects.splice(i, 1); } } }
     function updateMysteryBoxes() { for (let i = mysteryBoxes.length - 1; i >= 0; i--) { const box = mysteryBoxes[i]; if (!box) continue; box.update(); box.draw(); if (!box.collected && checkCollision(llama, box)) { box.collect(); } if ((box.collected && box.openTimer <= 0) || box.x + box.width < 0) { mysteryBoxes.splice(i, 1); } } }
@@ -619,11 +618,147 @@
     function showMissionCompletePopup() { showPopup(missionCompletePopup, `Mission Complete! +${activeMission.reward} Coins 🪙`); if(!isSoundMuted && audioReady) missionSynth.triggerAttackRelease("C6", "8n"); }
     function updateMissionProgress(type, value) { if (!activeMission || activeMission.type !== type || !isGameRunning || isPaused) { return; } missionProgress = value; if (missionProgress >= activeMission.target) { console.log(`Mission Complete: ${activeMission.description}`); coins += activeMission.reward; localStorage.setItem('llamaCoins', coins); showMissionCompletePopup(); selectNewMission(); updateDisplays(); } }
     function resetGame() { console.log("Resetting game..."); score=0; obstacles=[]; coinObjects=[]; clouds=[]; mysteryBoxes = []; frameCount=0; lastScoreThreshold=0; isGameOver=false; isPaused = false; updatePauseButtonVisibility(); isShieldActive=false; isMagnetActive=false; magnetTimer=0; extraLives=0; isInvincibleBoostActive = false; invincibleBoostTimer = 0; isDoubleCoinsBoostActive = false; doubleCoinsBoostTimer = 0; isSpeedBoostActive = false; speedBoostTimer = 0; isCoinRushActive = false; coinRushTimer = 0; baseGameSpeed = initialGameSpeed; gameSpeed = baseGameSpeed; console.log("Speed reset to:", gameSpeed); const startingCoinBonus = startCoinUpgradeLevel * 5; if (startingCoinBonus > 0) { coins += startingCoinBonus; console.log(`Applied starting coin bonus: +${startingCoinBonus}`); } currentMagnetDuration = baseMagnetDuration + (magnetDurationUpgradeLevel * 60); if(shieldsOwned>0){isShieldActive=true;shieldsOwned--;localStorage.setItem('llamaShields',shieldsOwned);} if(livesOwned>0){extraLives=1;livesOwned--;localStorage.setItem('llamaLives',livesOwned);} if(magnetsOwned>0){isMagnetActive=true;magnetTimer=currentMagnetDuration;magnetsOwned--;localStorage.setItem('llamaMagnets',magnetsOwned);} llama.reset(); coinsCollectedThisRun = 0; cactiJumpedThisRun = 0; birdsDuckedThisRun = 0; selectNewMission(); updateDisplays(); framesAfterReset = 10; console.log("Game reset complete."); }
-    function drawUI() { const canvasW = canvas.width / currentDPR; const canvasH = canvas.height / currentDPR; const padding = 15; const fontSizeSmall = Math.max(8, Math.min(10, canvasW / 40)); const uiFont = `${fontSizeSmall}px "Press Start 2P"`; ctx.fillStyle = isNight ? nightTextColor : dayTextColor; ctx.font = uiFont; ctx.textAlign = 'right'; const drawX = canvasW - padding; ctx.fillText(`HI ${highScore}`, drawX, padding + fontSizeSmall); ctx.fillText(`${score}`, drawX, padding * 2 + fontSizeSmall * 2); ctx.fillText(`🪙 ${coins}`, drawX, padding * 3 + fontSizeSmall * 3.5); ctx.fillText(`Lv ${playerLevel}`, drawX, padding * 4 + fontSizeSmall * 5); if (activeMission) { const progressText = activeMission.type === 'score' ? `${score}/${activeMission.target}` : `${missionProgress}/${activeMission.target}`; let missionText = `${activeMission.description} (${progressText})`; const maxWidth = canvasW * 0.4; if (ctx.measureText(missionText).width > maxWidth) { missionText = activeMission.description.substring(0, 15) + `... (${progressText})`; } ctx.fillText(missionText, drawX, padding * 5 + fontSizeSmall * 6.5); } if (missionNotificationTimer > 0 && !isPaused) { ctx.textAlign = 'center'; const notificationFont = `${fontSizeSmall * 1.1}px "Press Start 2P"`; ctx.font = notificationFont; const textWidth = ctx.measureText(missionNotificationText).width; const notificationX = canvasW / 2; const notificationY = padding + fontSizeSmall; ctx.fillStyle = isNight ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.6)'; ctx.fillRect(notificationX - textWidth / 2 - 5, notificationY - fontSizeSmall * 1.1, textWidth + 10, fontSizeSmall * 1.5); ctx.fillStyle = isNight ? '#00FFFF' : '#0000FF'; ctx.fillText(missionNotificationText, notificationX, notificationY); missionNotificationTimer--; ctx.font = uiFont; } if (isCoinRushActive) { ctx.textAlign = 'center'; ctx.font = `bold ${fontSizeSmall * 1.5}px "Press Start 2P"`; const rushColor = `rgba(255, ${180 + Math.sin(frameCount * 0.2) * 75}, 0, ${0.7 + Math.sin(frameCount * 0.1) * 0.3})`; ctx.fillStyle = rushColor; ctx.shadowColor = 'black'; ctx.shadowBlur = 5; ctx.fillText("COIN RUSH!", canvasW / 2, canvasH * 0.2); ctx.shadowBlur = 0; ctx.font = uiFont; } if (isDoubleCoinsBoostActive) { ctx.textAlign = 'center'; ctx.font = `bold ${fontSizeSmall * 1.2}px "Press Start 2P"`; ctx.fillStyle = 'lime'; ctx.shadowColor = 'black'; ctx.shadowBlur = 3; ctx.fillText("2x COINS!", canvasW / 2, canvasH * 0.25); ctx.shadowBlur = 0; ctx.font = uiFont; } }
-    function drawGameOverOverlay() { const dpr = window.devicePixelRatio || 1; const canvasW = canvas.width / dpr; const canvasH = canvas.height / dpr; const boxWidthRatio = 0.7; const boxHeightRatio = 0.6; const maxBoxWidth = 400; const maxBoxHeight = 350; const boxWidth = Math.min(canvasW * boxWidthRatio, maxBoxWidth); const boxHeight = Math.min(canvasH * boxHeightRatio, maxBoxHeight); const boxX = (canvasW - boxWidth) / 2; const boxY = (canvasH - boxHeight) / 2; ctx.fillStyle = "rgba(0, 0, 0, 0.75)"; ctx.fillRect(0, 0, canvasW, canvasH); ctx.fillStyle = isNight ? nightUiBg : "rgba(255, 255, 255, 0.95)"; ctx.strokeStyle = isNight ? nightUiBorder : "#4a4a4a"; ctx.lineWidth = 3; ctx.fillRect(Math.round(boxX), Math.round(boxY), Math.round(boxWidth), Math.round(boxHeight)); ctx.strokeRect(Math.round(boxX), Math.round(boxY), Math.round(boxWidth), Math.round(boxHeight)); const padding = boxWidth * 0.05; const baseFontSize = Math.max(10, Math.min(16, boxHeight / 18)); const lineSpacing = baseFontSize * 1.7; ctx.fillStyle = isNight ? nightTextColor : dayTextColor; ctx.textAlign = "center"; const centerX = boxX + boxWidth / 2; let currentY = boxY + padding + baseFontSize * 1.5; ctx.font = `bold ${baseFontSize * 1.3}px "Press Start 2P"`; ctx.fillText("Game Over!", centerX, Math.round(currentY)); currentY += lineSpacing * 1.2; ctx.font = `${baseFontSize}px "Press Start 2P"`; ctx.fillText(`Score: ${score}`, centerX, Math.round(currentY)); currentY += lineSpacing * 0.9; ctx.fillText(`Coins: ${coins} 🪙`, centerX, Math.round(currentY)); currentY += lineSpacing * 0.9; ctx.fillText(`Level: ${playerLevel}`, centerX, Math.round(currentY)); currentY += lineSpacing * 1.3; ctx.font = `${baseFontSize * 0.9}px "Press Start 2P"`; ctx.fillText("Tap to Restart", centerX, Math.round(currentY)); const buttonHeight = baseFontSize * 2.8; const buttonWidth = Math.min(boxWidth * 0.4, 150); const buttonSpacing = boxWidth * 0.05; const totalButtonWidth = buttonWidth * 2 + buttonSpacing; const buttonStartY = boxY + boxHeight - padding - buttonHeight; const buttonStartX = centerX - totalButtonWidth / 2; ctx.font = `${baseFontSize * 0.8}px "Press Start 2P"`; const storeButtonX = buttonStartX; const storeButtonY = buttonStartY; storeButtonBounds = { x: storeButtonX, y: storeButtonY, width: buttonWidth, height: buttonHeight }; ctx.fillStyle = isNight ? 'rgba(200, 200, 200, 0.2)' : 'rgba(100, 100, 100, 0.1)'; ctx.fillRect(Math.round(storeButtonBounds.x), Math.round(storeButtonBounds.y), Math.round(storeButtonBounds.width), Math.round(storeButtonBounds.height)); ctx.strokeStyle = isNight ? nightUiBorder : "#888"; ctx.lineWidth = 1; ctx.strokeRect(Math.round(storeButtonBounds.x), Math.round(storeButtonBounds.y), Math.round(storeButtonBounds.width), Math.round(storeButtonBounds.height)); ctx.fillStyle = isNight ? nightTextColor : dayTextColor; ctx.fillText("[ Store ]", Math.round(storeButtonX + buttonWidth / 2), Math.round(storeButtonY + buttonHeight * 0.65)); const achButtonX = buttonStartX + buttonWidth + buttonSpacing; const achButtonY = buttonStartY; achievementButtonBounds = { x: achButtonX, y: achButtonY, width: buttonWidth, height: buttonHeight }; ctx.fillStyle = isNight ? 'rgba(200, 200, 200, 0.2)' : 'rgba(100, 100, 100, 0.1)'; ctx.fillRect(Math.round(achievementButtonBounds.x), Math.round(achievementButtonBounds.y), Math.round(achievementButtonBounds.width), Math.round(achievementButtonBounds.height)); ctx.strokeStyle = isNight ? nightUiBorder : "#888"; ctx.lineWidth = 1; ctx.strokeRect(Math.round(achievementButtonBounds.x), Math.round(achievementButtonBounds.y), Math.round(achievementButtonBounds.width), Math.round(achievementButtonBounds.height)); ctx.fillStyle = isNight ? nightTextColor : dayTextColor; ctx.fillText("[Achieve]", Math.round(achButtonX + buttonWidth / 2), Math.round(achButtonY + buttonHeight * 0.65)); }
+    // --- UPDATED drawUI: Use canvas.width/height directly ---
+    function drawUI() {
+        const padding = 15;
+        const fontSizeSmall = Math.max(8, Math.min(10, canvas.width / 40)); // Use physical width
+        const uiFont = `${fontSizeSmall}px "Press Start 2P"`;
+
+        ctx.fillStyle = isNight ? nightTextColor : dayTextColor;
+        ctx.font = uiFont;
+
+        ctx.textAlign = 'right';
+        const drawX = canvas.width - padding; // Use physical width
+        ctx.fillText(`HI ${highScore}`, drawX, padding + fontSizeSmall);
+        ctx.fillText(`${score}`, drawX, padding * 2 + fontSizeSmall * 2);
+        ctx.fillText(`🪙 ${coins}`, drawX, padding * 3 + fontSizeSmall * 3.5);
+        ctx.fillText(`Lv ${playerLevel}`, drawX, padding * 4 + fontSizeSmall * 5);
+        if (activeMission) {
+            const progressText = activeMission.type === 'score' ? `${score}/${activeMission.target}` : `${missionProgress}/${activeMission.target}`;
+            let missionText = `${activeMission.description} (${progressText})`;
+            const maxWidth = canvas.width * 0.4; // Use physical width
+            if (ctx.measureText(missionText).width > maxWidth) {
+                missionText = activeMission.description.substring(0, 15) + `... (${progressText})`;
+            }
+            ctx.fillText(missionText, drawX, padding * 5 + fontSizeSmall * 6.5);
+        }
+
+        if (missionNotificationTimer > 0 && !isPaused) {
+            ctx.textAlign = 'center';
+            const notificationFont = `${fontSizeSmall * 1.1}px "Press Start 2P"`;
+            ctx.font = notificationFont;
+            const textWidth = ctx.measureText(missionNotificationText).width;
+            const notificationX = canvas.width / 2; // Use physical width
+            const notificationY = padding + fontSizeSmall;
+            ctx.fillStyle = isNight ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.6)';
+            ctx.fillRect(notificationX - textWidth / 2 - 5, notificationY - fontSizeSmall * 1.1, textWidth + 10, fontSizeSmall * 1.5);
+            ctx.fillStyle = isNight ? '#00FFFF' : '#0000FF';
+            ctx.fillText(missionNotificationText, notificationX, notificationY);
+            missionNotificationTimer--;
+            ctx.font = uiFont;
+        }
+        if (isCoinRushActive) {
+            ctx.textAlign = 'center';
+            ctx.font = `bold ${fontSizeSmall * 1.5}px "Press Start 2P"`;
+            const rushColor = `rgba(255, ${180 + Math.sin(frameCount * 0.2) * 75}, 0, ${0.7 + Math.sin(frameCount * 0.1) * 0.3})`;
+            ctx.fillStyle = rushColor;
+            ctx.shadowColor = 'black'; ctx.shadowBlur = 5;
+            ctx.fillText("COIN RUSH!", canvas.width / 2, canvas.height * 0.2); // Use physical dimensions
+            ctx.shadowBlur = 0;
+            ctx.font = uiFont;
+        }
+        if (isDoubleCoinsBoostActive) {
+            ctx.textAlign = 'center';
+            ctx.font = `bold ${fontSizeSmall * 1.2}px "Press Start 2P"`;
+            ctx.fillStyle = 'lime';
+            ctx.shadowColor = 'black'; ctx.shadowBlur = 3;
+            ctx.fillText("2x COINS!", canvas.width / 2, canvas.height * 0.25); // Use physical dimensions
+            ctx.shadowBlur = 0;
+            ctx.font = uiFont;
+        }
+    }
+     // --- UPDATED drawGameOverOverlay: Use canvas.width/height directly ---
+    function drawGameOverOverlay() {
+        const canvasW = canvas.width; // Use physical width
+        const canvasH = canvas.height; // Use physical height
+
+        const boxWidthRatio = 0.7; const boxHeightRatio = 0.6; const maxBoxWidth = 400; const maxBoxHeight = 350;
+        const boxWidth = Math.min(canvasW * boxWidthRatio, maxBoxWidth);
+        const boxHeight = Math.min(canvasH * boxHeightRatio, maxBoxHeight);
+        const boxX = (canvasW - boxWidth) / 2;
+        const boxY = (canvasH - boxHeight) / 2;
+
+        ctx.fillStyle = "rgba(0, 0, 0, 0.75)"; ctx.fillRect(0, 0, canvasW, canvasH);
+        ctx.fillStyle = isNight ? nightUiBg : "rgba(255, 255, 255, 0.95)"; ctx.strokeStyle = isNight ? nightUiBorder : "#4a4a4a"; ctx.lineWidth = 3;
+        ctx.fillRect(Math.round(boxX), Math.round(boxY), Math.round(boxWidth), Math.round(boxHeight)); ctx.strokeRect(Math.round(boxX), Math.round(boxY), Math.round(boxWidth), Math.round(boxHeight));
+
+        const padding = boxWidth * 0.05;
+        const baseFontSize = Math.max(10, Math.min(16, boxHeight / 18));
+        const lineSpacing = baseFontSize * 1.7;
+        ctx.fillStyle = isNight ? nightTextColor : dayTextColor; ctx.textAlign = "center";
+        const centerX = boxX + boxWidth / 2;
+        let currentY = boxY + padding + baseFontSize * 1.5;
+        ctx.font = `bold ${baseFontSize * 1.3}px "Press Start 2P"`; ctx.fillText("Game Over!", centerX, Math.round(currentY));
+        currentY += lineSpacing * 1.2; ctx.font = `${baseFontSize}px "Press Start 2P"`; ctx.fillText(`Score: ${score}`, centerX, Math.round(currentY));
+        currentY += lineSpacing * 0.9; ctx.fillText(`Coins: ${coins} 🪙`, centerX, Math.round(currentY));
+        currentY += lineSpacing * 0.9; ctx.fillText(`Level: ${playerLevel}`, centerX, Math.round(currentY));
+        currentY += lineSpacing * 1.3; ctx.font = `${baseFontSize * 0.9}px "Press Start 2P"`; ctx.fillText("Tap to Restart", centerX, Math.round(currentY));
+
+        const buttonHeight = baseFontSize * 2.8; const buttonWidth = Math.min(boxWidth * 0.4, 150); const buttonSpacing = boxWidth * 0.05;
+        const totalButtonWidth = buttonWidth * 2 + buttonSpacing; const buttonStartY = boxY + boxHeight - padding - buttonHeight; const buttonStartX = centerX - totalButtonWidth / 2;
+        ctx.font = `${baseFontSize * 0.8}px "Press Start 2P"`;
+
+        const storeButtonX = buttonStartX; const storeButtonY = buttonStartY;
+        // IMPORTANT: Bounds need to be stored using the *same coordinate system* as the touch events (CSS pixels)
+        const rect = canvas.getBoundingClientRect(); // Get scaling factor if needed
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        storeButtonBounds = { x: storeButtonX / scaleX, y: storeButtonY / scaleY, width: buttonWidth / scaleX, height: buttonHeight / scaleY };
+
+        ctx.fillStyle = isNight ? 'rgba(200, 200, 200, 0.2)' : 'rgba(100, 100, 100, 0.1)'; ctx.fillRect(Math.round(storeButtonX), Math.round(storeButtonY), Math.round(buttonWidth), Math.round(buttonHeight));
+        ctx.strokeStyle = isNight ? nightUiBorder : "#888"; ctx.lineWidth = 1; ctx.strokeRect(Math.round(storeButtonX), Math.round(storeButtonY), Math.round(buttonWidth), Math.round(buttonHeight));
+        ctx.fillStyle = isNight ? nightTextColor : dayTextColor; ctx.fillText("[ Store ]", Math.round(storeButtonX + buttonWidth / 2), Math.round(storeButtonY + buttonHeight * 0.65));
+
+        const achButtonX = buttonStartX + buttonWidth + buttonSpacing; const achButtonY = buttonStartY;
+        achievementButtonBounds = { x: achButtonX / scaleX, y: achButtonY / scaleY, width: buttonWidth / scaleX, height: buttonHeight / scaleY };
+
+        ctx.fillStyle = isNight ? 'rgba(200, 200, 200, 0.2)' : 'rgba(100, 100, 100, 0.1)'; ctx.fillRect(Math.round(achButtonX), Math.round(achButtonY), Math.round(buttonWidth), Math.round(buttonHeight));
+        ctx.strokeStyle = isNight ? nightUiBorder : "#888"; ctx.lineWidth = 1; ctx.strokeRect(Math.round(achButtonX), Math.round(achButtonY), Math.round(buttonWidth), Math.round(buttonHeight));
+        ctx.fillStyle = isNight ? nightTextColor : dayTextColor; ctx.fillText("[Achieve]", Math.round(achButtonX + buttonWidth / 2), Math.round(achButtonY + buttonHeight * 0.65));
+    }
     function grantMysteryReward(box) { const rand = Math.random(); let rewardMessage = ""; if (rand < 0.4) { const coinRand = Math.random(); let amount; if (coinRand < 0.6) amount = 5; else if (coinRand < 0.9) amount = 15; else amount = 30; coins += amount; rewardMessage = `+${amount} Coins! 🪙`; if(!isSoundMuted && audioReady) rewardSynth?.triggerAttackRelease(["C4", "E4", "G4"], "8n"); } else if (rand < 0.75) { const boostRand = Math.random(); if (boostRand < 0.5 && !isInvincibleBoostActive) { isInvincibleBoostActive = true; invincibleBoostTimer = invincibleBoostDuration; rewardMessage = "Invincible! (5s)"; if(!isSoundMuted && audioReady) rewardSynth?.triggerAttackRelease(["G4", "C5", "E5"], "4n"); } else if (!isDoubleCoinsBoostActive) { isDoubleCoinsBoostActive = true; doubleCoinsBoostTimer = doubleCoinsBoostDuration; rewardMessage = "2x Coins! (10s)"; if(!isSoundMuted && audioReady) rewardSynth?.triggerAttackRelease(["C4", "G4", "C5"], "4n"); } else { coins += 3; rewardMessage = "+3 Coins! 🪙"; if(!isSoundMuted && audioReady) rewardSynth?.triggerAttackRelease(["C4"], "8n"); } } else if (rand < 0.95) { const powerupRand = Math.random(); if (powerupRand < 0.5 && !isShieldActive && !isInvincibleBoostActive) { isShieldActive = true; updatePowerupIndicators(); rewardMessage = "Shield Activated!"; if(!isSoundMuted && audioReady) rewardSynth?.triggerAttackRelease(["E4", "G4", "B4"], "8n"); } else if (!isMagnetActive) { isMagnetActive = true; magnetTimer = currentMagnetDuration; updatePowerupIndicators(); rewardMessage = "Coin Magnet!"; if(!isSoundMuted && audioReady) rewardSynth?.triggerAttackRelease(["D4", "F#4", "A4"], "8n"); } else { coins += 10; rewardMessage = "+10 Coins! 🪙"; if(!isSoundMuted && audioReady) rewardSynth?.triggerAttackRelease(["D4", "A4"], "8n"); } } else { const ownedRand = Math.random(); if (ownedRand < 0.33) { shieldsOwned++; localStorage.setItem('llamaShields', shieldsOwned); rewardMessage = "+1 Shield Added!"; } else if (ownedRand < 0.66) { livesOwned++; localStorage.setItem('llamaLives', livesOwned); rewardMessage = "+1 Life Added!"; } else { magnetsOwned++; localStorage.setItem('llamaMagnets', magnetsOwned); rewardMessage = "+1 Magnet Added!"; } if(!isSoundMuted && audioReady) rewardSynth?.triggerAttackRelease(["C5", "E5", "G5", "C6"], "4n"); } if (rewardMessage) { showPopup(rewardPopup, rewardMessage); updateDisplays(); } console.log("Mystery Box Reward:", rewardMessage); }
     function checkDailyLogin() { const today = getCurrentDateString(); const lastLogin = localStorage.getItem('llamaLastLoginDate'); const consecutiveDays = parseInt(localStorage.getItem('llamaConsecutiveDays') || 0); const lastPlayDate = dailyPlayLog.length > 0 ? dailyPlayLog[dailyPlayLog.length - 1] : null; if (lastPlayDate !== today) { dailyPlayLog.push(today); try { localStorage.setItem('llamaDailyPlayLog', JSON.stringify(dailyPlayLog)); console.log(`Logged play for date: ${today}`); } catch (e) { console.error("Failed to save daily play log:", e); } } if (lastLogin === today) { return; } let currentStreak = 1; if (lastLogin) { const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1); const yesterdayStr = yesterday.toISOString().split('T')[0]; if (lastLogin === yesterdayStr) { currentStreak = consecutiveDays + 1; } } localStorage.setItem('llamaLastLoginDate', today); localStorage.setItem('llamaConsecutiveDays', currentStreak); const baseReward = 10 + (currentStreak - 1) * 5; let bonusMessage = ""; let bonusCoins = 0; let bonusItem = null; const bonusRand = Math.random(); if (currentStreak >= 5 && bonusRand < 0.15) { const itemRand = Math.random(); if (itemRand < 0.33) { bonusItem = 'Shield'; shieldsOwned++; localStorage.setItem('llamaShields', shieldsOwned); } else if (itemRand < 0.66) { bonusItem = 'Life'; livesOwned++; localStorage.setItem('llamaLives', livesOwned); } else { bonusItem = 'Magnet'; magnetsOwned++; localStorage.setItem('llamaMagnets', magnetsOwned); } bonusMessage = `+ Bonus ${bonusItem}!`; } else if (bonusRand < 0.3) { bonusCoins = 5 + Math.floor(Math.random() * (currentStreak * 2)); bonusMessage = `+ Bonus ${bonusCoins} Coins!`; } const totalReward = baseReward + bonusCoins; coins += totalReward; localStorage.setItem('llamaCoins', coins); dailyLoginTitle.textContent = `Day ${currentStreak} Login Bonus!`; dailyLoginMessage.innerHTML = `You received ${baseReward} Coins! 🪙<br>${bonusMessage || '(No extra bonus today)'}`; dailyBonusBreakdownList.innerHTML = ''; for (let i = 1; i <= 10; i++) { const dayReward = 10 + (i - 1) * 5; const li = document.createElement('li'); li.textContent = `Day ${i}: ${dayReward} 🪙`; if (i === currentStreak) { li.classList.add('current-day'); li.textContent += " (Today!)"; } else if (i < currentStreak) { li.style.opacity = '0.6'; } dailyBonusBreakdownList.appendChild(li); } dailyLoginModal.style.display = 'flex'; if(!isSoundMuted && audioReady) dailyBonusSynth?.triggerAttackRelease("A4", "2n"); updateDisplays(); }
-    function gameLoop() { if (isPaused) { return; } if (adDisplayPending) { displayAdPlaceholder(); return; } if (isGameOver) { const canvasW = canvas.width / currentDPR; const canvasH = canvas.height / currentDPR; ctx.fillStyle = currentBgColor; ctx.fillRect(0, 0, canvasW, canvasH); drawGround(); clouds.forEach(c => c.draw()); drawStars(); llama.draw(); drawGameOverOverlay(); return; } isGameRunning = true; updatePauseButtonVisibility(); if (framesAfterReset > 0) { framesAfterReset--; } const scoreCycle = Math.floor(score / 700); const shouldBeNight = scoreCycle % 2 !== 0; if (shouldBeNight !== isNight) { isNight = shouldBeNight; setBackground(isNight); if (isGameRunning && isNight) { totalNightsSurvived++; checkAchievements(); } } if (!isCoinRushActive && score >= coinRushMinScore && Math.random() < coinRushChance && framesAfterReset <= 0) { isCoinRushActive = true; coinRushTimer = coinRushDuration; if(!isSoundMuted && audioReady) coinRushSynth?.triggerAttackRelease("4n"); console.log("COIN RUSH STARTED!"); } if (isCoinRushActive) { coinRushTimer--; if (coinRushTimer <= 0) { isCoinRushActive = false; gameSpeed = baseGameSpeed; console.log("COIN RUSH ENDED"); } } if (isInvincibleBoostActive) { invincibleBoostTimer--; if (invincibleBoostTimer <= 0) isInvincibleBoostActive = false; } if (isDoubleCoinsBoostActive) { doubleCoinsBoostTimer--; if (doubleCoinsBoostTimer <= 0) isDoubleCoinsBoostActive = false; } if (isMagnetActive) { magnetTimer--; if (magnetTimer <= 0) { isMagnetActive = false; updatePowerupIndicators(); } } const canvasW = canvas.width / currentDPR; const canvasH = canvas.height / currentDPR; ctx.fillStyle = currentBgColor; ctx.fillRect(0, 0, canvasW, canvasH); spawnCloud(); updateClouds(); drawStars(); drawGround(); llama.update(); llama.draw(); if (framesAfterReset <= 0) { spawnObstacle(); spawnCoin(); spawnMysteryBox(); } updateObstacles(); updateCoins(); updateMysteryBoxes(); updateScore(); const currentScoreThreshold = Math.floor(score / 100); if (currentScoreThreshold > lastScoreThreshold && !isCoinRushActive) { gameSpeed += speedIncrement; baseGameSpeed += speedIncrement; lastScoreThreshold = currentScoreThreshold; console.log(`Score ${lastScoreThreshold * 100}, Speed: ${gameSpeed.toFixed(2)}`); } drawUI(); frameCount++; animationFrameId = requestAnimationFrame(gameLoop); }
+    // --- UPDATED gameLoop: Use canvas.width/height directly ---
+    function gameLoop() {
+        if (isPaused) { return; }
+        if (adDisplayPending) { displayAdPlaceholder(); return; }
+        if (isGameOver) {
+            ctx.fillStyle = currentBgColor; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            drawGround(); clouds.forEach(c => c.draw()); drawStars(); llama.draw();
+            drawGameOverOverlay();
+            return; // Stop loop, bounds set in drawGameOverOverlay
+        }
+        isGameRunning = true; updatePauseButtonVisibility();
+        if (framesAfterReset > 0) { framesAfterReset--; }
+        const scoreCycle = Math.floor(score / 700); const shouldBeNight = scoreCycle % 2 !== 0;
+        if (shouldBeNight !== isNight) { isNight = shouldBeNight; setBackground(isNight); if (isGameRunning && isNight) { totalNightsSurvived++; checkAchievements(); } }
+        if (!isCoinRushActive && score >= coinRushMinScore && Math.random() < coinRushChance && framesAfterReset <= 0) { isCoinRushActive = true; coinRushTimer = coinRushDuration; if(!isSoundMuted && audioReady) coinRushSynth?.triggerAttackRelease("4n"); console.log("COIN RUSH STARTED!"); }
+        if (isCoinRushActive) { coinRushTimer--; if (coinRushTimer <= 0) { isCoinRushActive = false; gameSpeed = baseGameSpeed; console.log("COIN RUSH ENDED"); } }
+        if (isInvincibleBoostActive) { invincibleBoostTimer--; if (invincibleBoostTimer <= 0) isInvincibleBoostActive = false; }
+        if (isDoubleCoinsBoostActive) { doubleCoinsBoostTimer--; if (doubleCoinsBoostTimer <= 0) isDoubleCoinsBoostActive = false; }
+        if (isMagnetActive) { magnetTimer--; if (magnetTimer <= 0) { isMagnetActive = false; updatePowerupIndicators(); } }
+        ctx.fillStyle = currentBgColor; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        spawnCloud(); updateClouds(); drawStars(); drawGround();
+        llama.update(); llama.draw();
+        if (framesAfterReset <= 0) { spawnObstacle(); spawnCoin(); spawnMysteryBox(); }
+        updateObstacles(); updateCoins(); updateMysteryBoxes();
+        updateScore();
+        const currentScoreThreshold = Math.floor(score / 100);
+        if (currentScoreThreshold > lastScoreThreshold && !isCoinRushActive) { gameSpeed += speedIncrement; baseGameSpeed += speedIncrement; lastScoreThreshold = currentScoreThreshold; console.log(`Score ${lastScoreThreshold * 100}, Speed: ${gameSpeed.toFixed(2)}`); }
+        drawUI();
+        frameCount++;
+        animationFrameId = requestAnimationFrame(gameLoop);
+    }
     function initiateGameStart() { storeButtonBounds = null; achievementButtonBounds = null; if (isAnyModalOpen()) return; if (!isGameOver || isGameRunning) { console.log("Not starting: game over=", isGameOver, " running=", isGameRunning); return; } console.log("Initiating game start..."); runCount++; localStorage.setItem('llamaRunCount', runCount); console.log(`Starting Run #${runCount}`); resetGame(); isGameOver = false; isGameRunning = true; updatePauseButtonVisibility(); if (animationFrameId) { cancelAnimationFrame(animationFrameId); } animationFrameId = requestAnimationFrame(gameLoop); }
     function updatePauseButtonVisibility() { const shouldBeVisible = isGameRunning && !isGameOver && !isPaused && !isAnyModalOpen(); pauseButton.style.display = shouldBeVisible ? 'block' : 'none'; }
     function isAnyModalOpen() { return dailyLoginModal.style.display === 'flex' || achievementModal.style.display === 'flex' || storeInterface.style.display === 'flex' || settingsModal.style.display === 'flex'; }
@@ -662,6 +797,13 @@
         } return; } if (isGameRunning) { touchStartX = touch.screenX; touchStartY = touch.screenY; touchStartTime = Date.now(); isSwiping = false; } }, {passive: false});
     gameContainer.addEventListener('touchmove', (e) => { if (isPaused || isAnyModalOpen()) return; if (!isGameRunning || touchStartY === 0) return; const touch = e.changedTouches[0]; const currentX = touch.screenX; const currentY = touch.screenY; let distY = currentY - touchStartY; let distX = currentX - touchStartX; if (!isSwiping && (Math.abs(distY) > 10 || Math.abs(distX) > 10)) { if (Math.abs(distY) > Math.abs(distX)) { e.preventDefault(); } isSwiping = true; } if (isSwiping && distY > minSwipeYDistance && Math.abs(distX) < maxSwipeXDistance) { if (!llama.isDucking) { llama.duck(true); } } }, {passive: false});
     gameContainer.addEventListener('touchend', (e) => { if (isPaused || isAnyModalOpen()) return; if (!isGameRunning || touchStartY === 0) { touchStartY = 0; isSwiping = false; return; } const touchEndTime = Date.now(); const touchDuration = touchEndTime - touchStartTime; const touchEndY = e.changedTouches[0].screenY; const touchEndX = e.changedTouches[0].screenX; let distY = touchEndY - touchStartY; let distX = touchEndX - touchStartX; if (touchDuration < maxTapTime && Math.abs(distX) < 20 && Math.abs(distY) < 20 && !isSwiping) { console.log("Tap -> Jump"); llama.jump(); } else if (distY > minSwipeYDistance && Math.abs(distX) < maxSwipeXDistance) { console.log("Swipe Down End -> Duck End"); llama.duck(false); } else if (distY < -minSwipeYDistance && Math.abs(distX) < maxSwipeXDistance) { console.log("Swipe Up -> Jump"); llama.jump(); } else { if (llama.isDucking){ llama.duck(false); } } touchStartX = 0; touchStartY = 0; touchStartTime = 0; isSwiping = false; });
+    // --- UPDATED: Added orientationchange listener ---
+    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('orientationchange', () => {
+        console.log("Orientation changed, resizing canvas...");
+        // Delay resize slightly to allow browser to update dimensions
+        setTimeout(resizeCanvas, 100);
+    });
     window.onload = () => { console.log("Window loaded. Initializing game display."); loadGameSettings(); loadAchievements(); resizeCanvas(); isGameOver = true; isGameRunning = false; updatePauseButtonVisibility(); checkDailyLogin(); updateDisplays(); currentMagnetDuration = baseMagnetDuration + (magnetDurationUpgradeLevel * 60); if (dailyLoginModal.style.display !== 'flex') { requestAnimationFrame(gameLoop); } console.log("Game initialized. Waiting for user interaction or modal close."); };
     function loadGameSettings() { magnetDurationUpgradeLevel = parseInt(localStorage.getItem('llamaMagnetUpgrade') || 0); startCoinUpgradeLevel = parseInt(localStorage.getItem('llamaStartCoinUpgrade') || 0); lifeEffectivenessUpgradeLevel = parseInt(localStorage.getItem('llamaLifeEffectUpgrade') || 0); coins = parseInt(localStorage.getItem('llamaCoins') || 0); playerXP = parseInt(localStorage.getItem('llamaPlayerXP') || 0); playerLevel = parseInt(localStorage.getItem('llamaPlayerLevel') || 1); highScore = parseInt(localStorage.getItem('llamaHighScore') || 0); shieldsOwned = parseInt(localStorage.getItem('llamaShields') || 0); livesOwned = parseInt(localStorage.getItem('llamaLives') || 0); magnetsOwned = parseInt(localStorage.getItem('llamaMagnets') || 0); runCount = parseInt(localStorage.getItem('llamaRunCount') || 0); adsRemoved = localStorage.getItem('llamaAdsRemoved') === 'true'; isSoundMuted = localStorage.getItem('llamaSoundMuted') === 'true'; toggleSoundButton.textContent = `Sound: ${isSoundMuted ? 'OFF' : 'ON'}`; if (typeof Tone !== 'undefined' && Tone.Master) { Tone.Master.mute = isSoundMuted; } try { dailyPlayLog = JSON.parse(localStorage.getItem('llamaDailyPlayLog') || '[]'); if (!Array.isArray(dailyPlayLog)) dailyPlayLog = []; } catch(e) { console.error("Failed to load daily play log:", e); dailyPlayLog = []; } console.log("Game settings loaded."); }
   </script>
