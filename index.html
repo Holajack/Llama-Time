@@ -23,30 +23,47 @@
     gtag('config', 'G-68N7VH7BF2');
   </script>
   <style>
-    /* Basic Reset & Body Styles */
+    /* Basic Reset & Body Styles -- MODIFIED */
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; overflow: hidden; }
-    body {
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      min-height: 100vh; background-color: #f0f0f0;
-      font-family: 'Press Start 2P', cursive; color: #333; padding: 0;
-      transition: background-color 0.5s ease;
-      -webkit-user-select: none; -ms-user-select: none; user-select: none;
+    html, body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden; /* Prevent scrollbars */
+        font-family: 'Press Start 2P', cursive; /* Apply font globally */
+        background-color: #f0f0f0; /* Body background color */
+        color: #333;
+        transition: background-color 0.5s ease;
+        -webkit-user-select: none; -ms-user-select: none; user-select: none;
     }
+    /* Removed flex centering from body */
 
-    /* Game Container & Canvas */
+    /* Game Container & Canvas -- MODIFIED */
     #game-container {
-      position: relative; width: 100vw; height: 100vh;
-      max-width: none; border: none; border-radius: 0;
-      overflow: hidden; cursor: pointer; background-color: #87CEEB;
-      transition: background-color 0.5s ease; flex-shrink: 0; margin: 0;
+      position: relative;
+      /* Use percentages to fill parent (body) */
+      width: 100%;
+      height: 100%;
+      max-width: none;
+      border: none;
+      border-radius: 0;
+      overflow: hidden;
+      cursor: pointer;
+      background-color: #87CEEB; /* Default background */
+      transition: background-color 0.5s ease;
+      flex-shrink: 0; /* Should not be needed now */
+      margin: 0;
     }
     canvas {
-      display: block; width: 100%; height: 100%; background-color: transparent;
-      image-rendering: pixelated; image-rendering: -moz-crisp-edges; image-rendering: crisp-edges;
+      display: block; /* Still important */
+      width: 100%;
+      height: 100%;
+      background-color: transparent;
+      image-rendering: pixelated;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: crisp-edges;
     }
 
-    /* Popups & Indicators */
+    /* Popups & Indicators (Unchanged) */
     #mission-complete-popup, #reward-popup, #level-up-popup, #achievement-popup {
       position: absolute; top: 15px; right: 15px;
       background-color: rgba(76, 175, 80, 0.9); color: white;
@@ -59,7 +76,7 @@
     #level-up-popup { background-color: rgba(0, 191, 255, 0.9); color: white; }
     #achievement-popup { background-color: rgba(128, 0, 128, 0.9); color: white; }
 
-    /* Store Interface */
+    /* Store Interface (Unchanged) */
     #store-interface {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
       background-color: rgba(0, 0, 0, 0.9); display: none; flex-direction: column;
@@ -78,7 +95,7 @@
     .store-item button:disabled { opacity: 0.5; cursor: not-allowed; }
     #close-store { margin-top: 20px; margin-bottom: 30px; padding: 10px 20px; font-size: clamp(0.9em, 3vw, 1em); flex-shrink: 0; font-family: 'Press Start 2P', cursive; border-radius: 8px; border: 2px solid #aaa; background: #eee; color: #33; cursor: pointer; }
 
-    /* Powerup Indicators */
+    /* Powerup Indicators (Unchanged) */
     #powerup-indicators { position: absolute; top: 10px; left: 10px; z-index: 5; display: flex; gap: 8px; pointer-events: none; }
     .indicator { font-size: clamp(1.2em, 4vw, 1.8em); opacity: 0.35; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); transition: opacity 0.3s ease, filter 0.3s ease; filter: grayscale(50%); }
     .indicator.owned { opacity: 0.7; filter: grayscale(0%); }
@@ -87,7 +104,7 @@
     @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
     @keyframes pulse-magnet { 0% { transform: scale(1); text-shadow: 0 0 5px gold; } 50% { transform: scale(1.2); text-shadow: 0 0 15px gold; } 100% { transform: scale(1); text-shadow: 0 0 5px gold; } }
 
-    /* Modal Styles (Shared Base) */
+    /* Modal Styles (Shared Base) (Unchanged) */
     .modal {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background-color: rgba(0, 0, 0, 0.8); display: none; flex-direction: column;
@@ -101,23 +118,16 @@
     }
     .modal-content h2 { font-size: clamp(1.1em, 4vw, 1.4em); margin-bottom: 15px; color: gold; }
     .modal-content p { font-size: clamp(0.8em, 3vw, 1em); margin-bottom: 20px; line-height: 1.5; }
-    .modal-close-button, .modal-button { /* Shared button style */
-        font-family: 'Press Start 2P', cursive; font-size: clamp(0.8em, 3vw, 1em);
-        padding: 10px 20px; border-radius: 8px; border: 2px solid #aaa;
-        background: #eee; color: #33; cursor: pointer; margin-top: 15px;
-        display: inline-block; /* Allow multiple buttons */
-        margin-left: 5px; margin-right: 5px;
-    }
+    .modal-close-button, .modal-button { font-family: 'Press Start 2P', cursive; font-size: clamp(0.8em, 3vw, 1em); padding: 10px 20px; border-radius: 8px; border: 2px solid #aaa; background: #eee; color: #33; cursor: pointer; margin-top: 15px; display: inline-block; margin-left: 5px; margin-right: 5px; }
     .modal-button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-
-    /* Daily Login Modal Specifics */
+    /* Daily Login Modal Specifics (Unchanged) */
     #daily-login-modal .modal-content { border-color: gold; }
     #daily-bonus-breakdown { list-style: none; padding: 0; margin: 15px 0; text-align: left; max-width: 250px; margin-left: auto; margin-right: auto; }
     #daily-bonus-breakdown li { font-size: clamp(0.7em, 2.5vw, 0.8em); margin-bottom: 5px; padding-left: 10px; border-left: 2px solid gold; }
     #daily-bonus-breakdown li.current-day { font-weight: bold; color: #FFD700; border-left-color: white; }
 
-    /* Achievement Modal Specifics */
+    /* Achievement Modal Specifics (Unchanged) */
     #achievement-modal .modal-content { border-color: purple; }
     #achievement-list { list-style: none; padding: 0; margin: 0; }
     .achievement-item { background-color: #4a4a4a; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #666; text-align: left; }
@@ -128,11 +138,11 @@
     .achievement-item.unlocked .status { color: gold; }
     .achievement-item.locked .status { color: #888; }
 
-    /* Settings Modal Specifics */
+    /* Settings Modal Specifics (Unchanged) */
     #settings-modal .modal-content { border-color: silver; }
     #settings-modal .modal-content h2 { color: silver; }
 
-    /* Ad Placeholder */
+    /* Ad Placeholder (Unchanged) */
     #ad-placeholder {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background-color: rgba(0, 0, 0, 0.9); color: white; display: none;
@@ -143,11 +153,11 @@
      #ad-placeholder .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #ffd700; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
      @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-     /* Pause Button -- MOVED TO TOP-LEFT */
+     /* Pause Button (Position Updated) */
      #pause-button {
          position: absolute;
          top: 10px;
-         left: 10px; /* Positioned top-left */
+         left: 10px; /* MOVED to top-left */
          z-index: 10;
          font-size: clamp(1.5em, 5vw, 2em);
          background: rgba(255, 255, 255, 0.5);
@@ -167,7 +177,7 @@
           background: rgba(255, 255, 255, 0.8);
       }
 
-     /* Responsive Adjustments */
+     /* Responsive Adjustments (Unchanged) */
      @media (max-height: 450px) and (orientation: landscape) {
         .modal-content { padding: 10px 15px; }
         .modal-content h2 { font-size: 1em; }
