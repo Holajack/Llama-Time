@@ -357,7 +357,8 @@
     // --- Game Variables ---
     let score = 0; let highScore = 0; let coins = 0;
     let shieldsOwned = 0; let livesOwned = 0; let magnetsOwned = 0;
-    const initialGameSpeed = 2.5; let gameSpeed = initialGameSpeed; let baseGameSpeed = initialGameSpeed;
+    const initialGameSpeed = 3.5; // Keep increased speed
+    let gameSpeed = initialGameSpeed; let baseGameSpeed = initialGameSpeed;
     const speedIncrement = 0.3; let lastScoreThreshold = 0;
     let gravity = 0.35; const fastFallMultiplier = 3.5;
     let isGameOver = true; let isGameRunning = false; let animationFrameId;
@@ -399,8 +400,7 @@
     let touchStartX = 0; let touchStartY = 0; let touchStartTime = 0; let isSwiping = false;
     const minSwipeYDistance = 50; const maxSwipeXDistance = 50; const maxTapTime = 250;
     let storeButtonBounds = null; let achievementButtonBounds = null;
-    const groundHeight = 50;
-    // --- Removed currentDPR variable ---
+    const groundHeight = 120; // Keep increased ground height
 
     // --- NEW: Pause State ---
     let isPaused = false;
@@ -409,25 +409,27 @@
     // --- Daily Play Log ---
     let dailyPlayLog = [];
 
-    // --- Llama Object (Increased Size) ---
+    // --- Llama Object (Increased Size, Adjusted X, Adjusted Jump) ---
     const llama = {
-        x: 50, y: 0,
-        drawWidth: 56 * 1.5, drawHeight: 56 * 1.5, // Increased visual size
-        width: 50 * 1.5, height: 52 * 1.5, // Increased hitbox size
+        x: 120, // Keep Llama further right
+        y: 0,
+        // Increased draw/hitbox size based on p=4
+        drawWidth: 56 * 2, drawHeight: 56 * 2, // p=4 -> 2 * original p=2
+        width: 50 * 2, height: 52 * 2,
         dy: 0,
-        jumpPower: -13, // Slightly increased jump power for taller llama
+        jumpPower: -15, // Keep increased jump power
         isJumping: false,
         isDucking: false,
-        duckHeight: 30 * 1.5, // Increased duck height
+        duckHeight: 30 * 2, // Scaled duck height
         baseY: 0,
         runFrame: 0,
-        runAnimationSpeed: 5, // Slightly faster animation for larger steps?
-        // --- Llama Drawing (Using Increased Scale Factor) ---
+        runAnimationSpeed: 5,
+        // --- Llama Drawing (Using Increased Scale Factor p=4) ---
         draw() {
             const bodyHigh='#F5E5D0', bodyLight='#EAD8BF', bodyMain='#D8B898', bodyShade='#B89878';
             const legMain='#A08060', legShade='#806040', hoof='#604030';
             const faceMain='#F0D0B0', earInner='#E0C0A0', eyeWhite='#FFFFFF', eyePupil='#000000', nose='#705040', hair='#907050';
-            const p = 3; // <<< INCREASED PIXEL SCALE FACTOR (was 2)
+            const p = 4; // Keep increased pixel scale factor
 
             ctx.save();
             ctx.translate(Math.round(this.x), Math.round(this.y));
@@ -435,10 +437,8 @@
             let scaleY = 1;
             let duckOffsetY = 0;
             if (this.isDucking) {
-                // Calculate scale based on new duckHeight vs original height
                 scaleY = this.duckHeight / this.height;
-                // Offset Y position when ducking so bottom stays aligned
-                duckOffsetY = this.drawHeight * (1 - scaleY); // Use drawHeight for visual offset
+                duckOffsetY = this.drawHeight * (1 - scaleY);
                 ctx.translate(0, duckOffsetY);
                 ctx.scale(1, scaleY);
             }
@@ -533,8 +533,7 @@
         jump() { if (isGameRunning && !this.isJumping && !this.isDucking && this.y >= this.baseY) { this.dy = this.jumpPower; this.isJumping = true; this.isDucking = false; if(!isSoundMuted && audioReady) jumpSynth?.triggerAttackRelease("F#5", "16n"); } },
         duck(shouldDuck) { if (isGameRunning) { if(shouldDuck && this.isJumping) return; this.isDucking = shouldDuck; } else { this.isDucking = false; } },
         reset() {
-            // Use direct canvas height - assuming CSS handles sizing correctly
-            this.baseY = canvas.height - groundHeight - this.height; // Uses new, larger height
+            this.baseY = canvas.height - groundHeight - this.height; // Uses new groundHeight & llama height
             this.y = this.baseY;
             this.dy = 0;
             this.isJumping = false;
@@ -549,13 +548,12 @@
 
     // --- Obstacle Class ---
     class Obstacle { constructor(x, y, width, height, type) { this.x = x; this.y = y; this.width = width; this.height = height; this.type = type; }
-        // --- Obstacle Drawing (Increased Scale Factor) ---
+        // --- Obstacle Drawing (Increased Scale Factor p=4) ---
         draw() {
             if (this.type === 'cactus') {
-                const p = 3; // <<< INCREASED PIXEL SCALE FACTOR (was 2)
+                const p = 4; // <<< INCREASED PIXEL SCALE FACTOR (was 3)
                 const mainColor='#2E8B57', darkColor='#228B22', lightColor='#3CB371', spineColor='#1A4D2E';
                 ctx.save(); ctx.translate(Math.round(this.x), Math.round(this.y));
-                // Calculate conceptual dimensions based on hitbox, not fixed 'p'
                 const conceptualHeight = this.height / p;
                 const conceptualWidth = this.width / p;
                 const segmentHeight = Math.max(2, Math.floor(conceptualHeight / 5));
@@ -568,7 +566,7 @@
                 ctx.fillStyle = spineColor; for(let i = 0; i < conceptualHeight / 2; i++) { ctx.fillRect(p*2 + Math.random()*(this.width-p*4), Math.random()*this.height, p/2, p/2); if(Math.random() < 0.4) ctx.fillRect(armLX_concept*p + Math.random()*armW_concept*p, armLY_concept*p + Math.random()*armH_concept*p, p/2, p/2); if(Math.random() < 0.4) ctx.fillRect(armRX_concept*p + Math.random()*armW_concept*p, armRY_concept*p + Math.random()*armH_concept*p, p/2, p/2); }
                 ctx.restore();
             } else if (this.type === 'bird') {
-                const p_bird = 3; // <<< INCREASED PIXEL SCALE FACTOR (was 2)
+                const p_bird = 4; // <<< INCREASED PIXEL SCALE FACTOR (was 3)
                 const cs = { bodyLight: '#FFDAB9', bodyMain: '#FFA500', bodyDark: '#CD853F', wingHigh: '#FFF8DC', wingLight: '#FFE4B5', wingMain: '#FFDEAD', beak: '#A0522D', eye: '#000000', eyeWhite: '#FFFFFF' };
                 ctx.save(); ctx.translate(Math.round(this.x), Math.round(this.y));
                 ctx.fillStyle = cs.bodyMain; ctx.fillRect(p_bird*5, p_bird*4, p_bird*12, p_bird*8); ctx.fillStyle = cs.bodyLight; ctx.fillRect(p_bird*6, p_bird*8, p_bird*10, p_bird*4); ctx.fillStyle = cs.bodyDark; ctx.fillRect(p_bird*5, p_bird*4, p_bird*12, p_bird*2); ctx.fillStyle = cs.bodyMain; ctx.fillRect(p_bird*17, p_bird*6, p_bird*4, p_bird*5); ctx.fillStyle = cs.bodyDark; ctx.fillRect(p_bird*17, p_bird*6, p_bird*4, p_bird*1); ctx.fillStyle = cs.bodyMain; ctx.fillRect(p_bird*0, p_bird*1, p_bird*6, p_bird*6); ctx.fillStyle = cs.bodyDark; ctx.fillRect(p_bird*0, p_bird*1, p_bird*6, p_bird*1); ctx.fillStyle = cs.beak; ctx.fillRect(p_bird*-3, p_bird*3, p_bird*4, p_bird*2); ctx.fillRect(p_bird*-2, p_bird*4, p_bird*2, p_bird*1); ctx.fillStyle = cs.eyeWhite; ctx.fillRect(p_bird*2, p_bird*3, p_bird*3, p_bird*3); ctx.fillStyle = cs.eye; ctx.fillRect(p_bird*3, p_bird*4, p_bird*1, p_bird*1);
@@ -583,7 +581,7 @@
     class Cloud { constructor(x, y, width, height, speed) { this.x = x; this.y = y; this.width = width; this.height = height; this.speed = speed; } draw() { const p = 1; const c1='#FFFFFF', c2='#F0F8FF', c3='#E0E8EF'; ctx.save(); ctx.globalAlpha = 0.8; ctx.translate(Math.round(this.x), Math.round(this.y)); ctx.fillStyle=c1; ctx.fillRect(0, p*5, this.width, this.height - p*5); ctx.beginPath(); ctx.arc(this.width * 0.25, p*5, this.width * 0.25, Math.PI, Math.PI * 2); ctx.arc(this.width * 0.75, p*5, this.width * 0.25, Math.PI, Math.PI * 2); ctx.closePath(); ctx.fill(); ctx.fillStyle = c2; ctx.fillRect(this.width * 0.1, this.height - p*5, this.width*0.8, p*5); ctx.restore(); } update() { this.x -= this.speed; } }
     // --- Coin Class (Increased Radius) ---
     class Coin {
-        constructor(x,y,r = 15){ // <<< INCREASED default radius
+        constructor(x,y,r = 20){ // <<< INCREASED default radius (was 15)
             this.x=x; this.y=y; this.radius=r; this.collected=false;
         }
         draw() { if (!this.collected) { const bob = Math.sin(frameCount * 0.1 + this.x * 0.05) * 3; const drawX = Math.round(this.x); const drawY = Math.round(this.y + bob); const centerX = drawX + this.radius; const centerY = drawY + this.radius; const outlineColor = '#B8860B'; const mainColor = '#FFD700'; const shadowColor = '#DAA520'; const highlightColor = '#FFFFE0'; ctx.save(); ctx.translate(centerX, centerY); ctx.fillStyle = outlineColor; ctx.beginPath(); ctx.arc(0, 0, this.radius + 1, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = mainColor; ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = shadowColor; ctx.beginPath(); ctx.arc(0, 0, this.radius * 0.7, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = highlightColor; ctx.beginPath(); ctx.arc(-this.radius * 0.3, -this.radius * 0.3, this.radius * 0.4, Math.PI * 1.2, Math.PI * 1.9); ctx.fill(); ctx.restore(); } }
@@ -591,7 +589,7 @@
     }
     // --- Mystery Box Class (Increased Size) ---
     class MysteryBox {
-        constructor(x, y, size = 50) { // <<< INCREASED default size
+        constructor(x, y, size = 65) { // <<< INCREASED default size (was 50)
             this.x = x; this.y = y; this.width = size; this.height = size;
             this.collected = false; this.openTimer = 0; this.openDuration = 30;
             this.bobOffset = Math.random() * Math.PI * 2;
@@ -629,17 +627,13 @@
         const dpr = window.devicePixelRatio || 1;
         const rect = container.getBoundingClientRect();
 
-        // Set canvas buffer size based on DPR for resolution
         canvas.width = rect.width * dpr;
         canvas.height = rect.height * dpr;
-
-        // Set display size using CSS pixels
         canvas.style.width = `${rect.width}px`;
         canvas.style.height = `${rect.height}px`;
 
         // --- REMOVED --- ctx.scale(dpr, dpr);
 
-        // Now, all drawing coordinates use the physical canvas dimensions (canvas.width, canvas.height)
         llama.reset();
         drawGround();
         setBackground(isNight);
@@ -655,33 +649,36 @@
     function drawGround() { if (!ctx) return; ctx.fillStyle = isNight ? nightGroundColor : dayGroundColor; ctx.fillRect(0, canvas.height - groundHeight, canvas.width, groundHeight); ctx.fillStyle = isNight ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.1)'; const lineOffset = Math.floor(frameCount * gameSpeed) % 20; for(let i = -lineOffset; i < canvas.width; i+=20){ ctx.fillRect(i, canvas.height - groundHeight + 5, 2, groundHeight - 10); } }
     function spawnCloud() { const spawnChance=0.003; if(Math.random()<spawnChance){ const cw=getRandomInt(80,140); const ch=getRandomInt(40,70); const cy=Math.random()*(canvas.height * 0.3); const cs=gameSpeed*(0.05+Math.random()*0.1); clouds.push(new Cloud(canvas.width, cy, cw, ch, cs)); } }
     function updateClouds() { for(let i=clouds.length-1;i>=0;i--){ clouds[i].update(); clouds[i].draw(); if(clouds[i].x+clouds[i].width<0){ clouds.splice(i,1);}} }
-    // --- UPDATED spawnObstacle (Increased Sizes) ---
+    // --- UPDATED spawnObstacle (Increased Sizes & Adjusted Gaps) ---
     function spawnObstacle() {
         if (!isGameRunning || isPaused || isCoinRushActive) return;
         const speedFactor = Math.max(0.5, 1 - (gameSpeed / 25));
-        const baseMinGap = 250; // Increased base gap slightly for larger objects
-        const randomGapAdd = 280; // Increased random gap slightly
-        const absoluteMinGap = 180; // Increased absolute min gap
+        // --- Adjusted Gaps ---
+        const baseMinGap = 280; // <<< INCREASED (was 220)
+        const randomGapAdd = 250; // Keep as is
+        const absoluteMinGap = 220; // <<< INCREASED (was 180)
+        // --- End Gap Adjustment ---
         const minGap = (baseMinGap + Math.random() * randomGapAdd) * speedFactor + absoluteMinGap;
 
         const lastObstacle = obstacles[obstacles.length - 1];
         if (!lastObstacle || (canvas.width - (lastObstacle.x + lastObstacle.width)) > minGap) {
             const type = Math.random() < 0.6 ? 'cactus' : 'bird';
             let obstacle;
-            const sizeMultiplier = 1.5; // Factor to increase size
+            const sizeMultiplier = 2.0; // Keep larger size factor
 
             if (type === 'cactus') {
-                // Increase base height and width
-                const cactusHeight = (46 + Math.random() * 30) * sizeMultiplier;
-                const cactusWidth = (30 + Math.random() * 10) * sizeMultiplier;
+                const baseHeight = 46 + Math.random() * 30;
+                const baseWidth = 30 + Math.random() * 10;
+                const cactusHeight = baseHeight * sizeMultiplier;
+                const cactusWidth = baseWidth * sizeMultiplier;
                 obstacle = new Obstacle( canvas.width, canvas.height - groundHeight - cactusHeight, cactusWidth, cactusHeight, 'cactus' );
             } else {
-                // Increase hitbox size
-                const birdHitboxWidth = 40 * sizeMultiplier;
-                const birdHitboxHeight = 30 * sizeMultiplier;
-                const clearance = 5 * sizeMultiplier; // Scale clearance too
-                // Position bird based on new llama duck height
-                const birdY = canvas.height - groundHeight - llama.duckHeight - birdHitboxHeight - clearance;
+                const baseBirdWidth = 40;
+                const baseBirdHeight = 30;
+                const birdHitboxWidth = baseBirdWidth * sizeMultiplier;
+                const birdHitboxHeight = baseBirdHeight * sizeMultiplier;
+                const clearance = 5 * sizeMultiplier;
+                const birdY = canvas.height - groundHeight - llama.duckHeight - birdHitboxHeight - clearance; // Uses updated llama.duckHeight
                 obstacle = new Obstacle( canvas.width, birdY, birdHitboxWidth, birdHitboxHeight, 'bird' );
             }
             obstacles.push(obstacle);
@@ -691,10 +688,10 @@
     function spawnCoin() {
         if (!isGameRunning || isPaused) return;
         let chance = 0.02;
-        const minGap = 100; // Increased gap slightly
+        const minGap = 120; // Increased gap slightly for larger coins
         const lastCoin = coinObjects[coinObjects.length - 1];
         const spawnX = canvas.width;
-        const r = 15; // <<< Using the larger radius defined in Coin class
+        const r = 20; // Larger radius
 
         if (isCoinRushActive) {
             chance = 0.25;
@@ -705,7 +702,7 @@
                     startX = lastCoin.x + lastCoin.radius * 2 + minGap * 0.5;
                 }
                 for (let i = 0; i < numCoins; i++) {
-                    const y = canvas.height - groundHeight - r*2 - 5 - Math.random() * (llama.height * 1.2);
+                    const y = canvas.height - groundHeight - r*2 - 5 - Math.random() * (llama.height * 1.2); // Use llama.height
                     coinObjects.push(new Coin(startX + i * (r * 2.5), Math.max(y, r*2), r));
                 }
             }
@@ -716,27 +713,27 @@
                 const rf = Math.random();
                 let y;
                 if (rf < 0.5) { y = canvas.height - groundHeight - r*2 - 5; }
-                else { const baseJumpHeight = canvas.height - groundHeight - r*2 - (llama.height * 0.6); y = baseJumpHeight - Math.random()*(llama.height*0.7); }
+                else { const baseJumpHeight = canvas.height - groundHeight - r*2 - (llama.height * 0.6); y = baseJumpHeight - Math.random()*(llama.height*0.7); } // Use llama.height
                 coinObjects.push(new Coin(spawnX, Math.max(y, r*2), r));
             }
         }
     }
-    // --- UPDATED spawnMysteryBox (Using larger size) ---
+    // --- UPDATED spawnMysteryBox (Using larger size, reduced chance) ---
     function spawnMysteryBox() {
         if (!isGameRunning || isPaused || isCoinRushActive) return;
-        const chance = 0.0004;
+        const chance = 0.0004; // Rarer
         const minGap = 400;
         const obstacleSafetyMargin = 50;
         const spawnX = canvas.width;
         const lastBox = mysteryBoxes[mysteryBoxes.length - 1];
-        const size = 50; // <<< Using the larger size defined in MysteryBox class
+        const size = 65; // Larger size
 
         if (Math.random() < chance) {
             const boxGapOk = !lastBox || (spawnX - (lastBox.x + lastBox.width)) > minGap;
             if (boxGapOk) {
                 let y;
                 if (Math.random() < 0.5) { y = canvas.height - groundHeight - size - 5; }
-                else { y = canvas.height - groundHeight - size - (llama.height * 0.7) - Math.random() * (llama.height * 0.6); }
+                else { y = canvas.height - groundHeight - size - (llama.height * 0.7) - Math.random() * (llama.height * 0.6); } // Use llama.height
                 y = Math.max(size, y);
                 let cactusOverlap = false;
                 for (const obs of obstacles) {
@@ -777,44 +774,49 @@
     function showMissionCompletePopup() { showPopup(missionCompletePopup, `Mission Complete! +${activeMission.reward} Coins 🪙`); if(!isSoundMuted && audioReady) missionSynth.triggerAttackRelease("C6", "8n"); }
     function updateMissionProgress(type, value) { if (!activeMission || activeMission.type !== type || !isGameRunning || isPaused) { return; } missionProgress = value; if (missionProgress >= activeMission.target) { console.log(`Mission Complete: ${activeMission.description}`); coins += activeMission.reward; localStorage.setItem('llamaCoins', coins); showMissionCompletePopup(); selectNewMission(); updateDisplays(); } }
     function resetGame() { console.log("Resetting game..."); score=0; obstacles=[]; coinObjects=[]; clouds=[]; mysteryBoxes = []; frameCount=0; lastScoreThreshold=0; isGameOver=false; isPaused = false; updatePauseButtonVisibility(); isShieldActive=false; isMagnetActive=false; magnetTimer=0; extraLives=0; isInvincibleBoostActive = false; invincibleBoostTimer = 0; isDoubleCoinsBoostActive = false; doubleCoinsBoostTimer = 0; isSpeedBoostActive = false; speedBoostTimer = 0; isCoinRushActive = false; coinRushTimer = 0; baseGameSpeed = initialGameSpeed; gameSpeed = baseGameSpeed; console.log("Speed reset to:", gameSpeed); const startingCoinBonus = startCoinUpgradeLevel * 5; if (startingCoinBonus > 0) { coins += startingCoinBonus; console.log(`Applied starting coin bonus: +${startingCoinBonus}`); } currentMagnetDuration = baseMagnetDuration + (magnetDurationUpgradeLevel * 60); if(shieldsOwned>0){isShieldActive=true;shieldsOwned--;localStorage.setItem('llamaShields',shieldsOwned);} if(livesOwned>0){extraLives=1;livesOwned--;localStorage.setItem('llamaLives',livesOwned);} if(magnetsOwned>0){isMagnetActive=true;magnetTimer=currentMagnetDuration;magnetsOwned--;localStorage.setItem('llamaMagnets',magnetsOwned);} llama.reset(); coinsCollectedThisRun = 0; cactiJumpedThisRun = 0; birdsDuckedThisRun = 0; selectNewMission(); updateDisplays(); framesAfterReset = 10; console.log("Game reset complete."); }
-    // --- UPDATED drawUI: Use canvas.width/height directly ---
+    // --- UPDATED drawUI: Increased font size ---
     function drawUI() {
         const padding = 15;
-        const fontSizeSmall = Math.max(8, Math.min(10, canvas.width / 40)); // Use physical width
+        const baseFontSizeSmall = Math.max(8, Math.min(10, canvas.width / 40)); // Base calculation
+        const fontSizeSmall = baseFontSizeSmall * 1.5; // <<< INCREASED FONT SIZE
         const uiFont = `${fontSizeSmall}px "Press Start 2P"`;
 
         ctx.fillStyle = isNight ? nightTextColor : dayTextColor;
         ctx.font = uiFont;
 
         ctx.textAlign = 'right';
-        const drawX = canvas.width - padding; // Use physical width
+        const drawX = canvas.width - padding;
+        const lineSpacing = fontSizeSmall * 1.2; // Adjust line spacing based on new font size
+
         ctx.fillText(`HI ${highScore}`, drawX, padding + fontSizeSmall);
-        ctx.fillText(`${score}`, drawX, padding * 2 + fontSizeSmall * 2);
-        ctx.fillText(`🪙 ${coins}`, drawX, padding * 3 + fontSizeSmall * 3.5);
-        ctx.fillText(`Lv ${playerLevel}`, drawX, padding * 4 + fontSizeSmall * 5);
+        ctx.fillText(`${score}`, drawX, padding + fontSizeSmall + lineSpacing);
+        ctx.fillText(`🪙 ${coins}`, drawX, padding + fontSizeSmall + lineSpacing * 2);
+        ctx.fillText(`Lv ${playerLevel}`, drawX, padding + fontSizeSmall + lineSpacing * 3);
+
         if (activeMission) {
             const progressText = activeMission.type === 'score' ? `${score}/${activeMission.target}` : `${missionProgress}/${activeMission.target}`;
             let missionText = `${activeMission.description} (${progressText})`;
-            const maxWidth = canvas.width * 0.4; // Use physical width
+            const maxWidth = canvas.width * 0.4;
             if (ctx.measureText(missionText).width > maxWidth) {
                 missionText = activeMission.description.substring(0, 15) + `... (${progressText})`;
             }
-            ctx.fillText(missionText, drawX, padding * 5 + fontSizeSmall * 6.5);
+            ctx.fillText(missionText, drawX, padding + fontSizeSmall + lineSpacing * 4);
         }
 
         if (missionNotificationTimer > 0 && !isPaused) {
             ctx.textAlign = 'center';
-            const notificationFont = `${fontSizeSmall * 1.1}px "Press Start 2P"`;
+            const notificationFontSize = fontSizeSmall * 1.1; // Scale notification font too
+            const notificationFont = `${notificationFontSize}px "Press Start 2P"`;
             ctx.font = notificationFont;
             const textWidth = ctx.measureText(missionNotificationText).width;
-            const notificationX = canvas.width / 2; // Use physical width
-            const notificationY = padding + fontSizeSmall;
+            const notificationX = canvas.width / 2;
+            const notificationY = padding + notificationFontSize; // Adjust Y based on new size
             ctx.fillStyle = isNight ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.6)';
-            ctx.fillRect(notificationX - textWidth / 2 - 5, notificationY - fontSizeSmall * 1.1, textWidth + 10, fontSizeSmall * 1.5);
+            ctx.fillRect(notificationX - textWidth / 2 - 5, notificationY - notificationFontSize, textWidth + 10, notificationFontSize * 1.5);
             ctx.fillStyle = isNight ? '#00FFFF' : '#0000FF';
             ctx.fillText(missionNotificationText, notificationX, notificationY);
             missionNotificationTimer--;
-            ctx.font = uiFont;
+            ctx.font = uiFont; // Reset font for next elements
         }
         if (isCoinRushActive) {
             ctx.textAlign = 'center';
@@ -822,7 +824,7 @@
             const rushColor = `rgba(255, ${180 + Math.sin(frameCount * 0.2) * 75}, 0, ${0.7 + Math.sin(frameCount * 0.1) * 0.3})`;
             ctx.fillStyle = rushColor;
             ctx.shadowColor = 'black'; ctx.shadowBlur = 5;
-            ctx.fillText("COIN RUSH!", canvas.width / 2, canvas.height * 0.2); // Use physical dimensions
+            ctx.fillText("COIN RUSH!", canvas.width / 2, canvas.height * 0.2);
             ctx.shadowBlur = 0;
             ctx.font = uiFont;
         }
@@ -831,7 +833,7 @@
             ctx.font = `bold ${fontSizeSmall * 1.2}px "Press Start 2P"`;
             ctx.fillStyle = 'lime';
             ctx.shadowColor = 'black'; ctx.shadowBlur = 3;
-            ctx.fillText("2x COINS!", canvas.width / 2, canvas.height * 0.25); // Use physical dimensions
+            ctx.fillText("2x COINS!", canvas.width / 2, canvas.height * 0.25);
             ctx.shadowBlur = 0;
             ctx.font = uiFont;
         }
@@ -941,30 +943,23 @@
     toggleSoundButton.addEventListener('click', (e) => { e.stopPropagation(); isSoundMuted = !isSoundMuted; if (typeof Tone !== 'undefined' && Tone.Master) { Tone.Master.mute = isSoundMuted; } localStorage.setItem('llamaSoundMuted', isSoundMuted); toggleSoundButton.textContent = `Sound: ${isSoundMuted ? 'OFF' : 'ON'}`; playUIClick(); console.log(`Sound Muted: ${isSoundMuted}`); });
     function handleGameStartInteraction() { if (isAnyModalOpen()) return; if (!isGameOver || isGameRunning) { console.log("Interaction ignored: game not ready."); return; } console.log("Handle Interaction - Game Over: ", isGameOver, " Running: ", isGameRunning); if (!audioReady) { try { console.log("Attempting Tone.start()..."); Tone.start().then(() => { console.log("Audio context started successfully."); setupAudio(); initiateGameStart(); }).catch(e => { console.error("Tone.start() failed:", e); initiateGameStart(); }); } catch (e) { console.error("Error calling Tone.start():", e); initiateGameStart(); } } else { console.log("Audio ready, starting game directly."); initiateGameStart(); } }
     gameContainer.addEventListener('touchstart', (e) => { if (isPaused || isAnyModalOpen()) return; const touch = e.changedTouches[0]; const rect = canvas.getBoundingClientRect(); if (isGameOver) { e.preventDefault(); const touchX = touch.clientX - rect.left; const touchY = touch.clientY - rect.top;
-        // --- DEBUG LOGS ---
         console.log(`GameOver Tap: touchX=${touchX.toFixed(2)}, touchY=${touchY.toFixed(2)}`);
         console.log('Store Bounds:', storeButtonBounds);
         console.log('Achieve Bounds:', achievementButtonBounds);
-        // --- END DEBUG LOGS ---
         if (storeButtonBounds && touchX >= storeButtonBounds.x && touchX <= storeButtonBounds.x + storeButtonBounds.width && touchY >= storeButtonBounds.y && touchY <= storeButtonBounds.y + storeButtonBounds.height) {
-            console.log(">>> Store button condition MET"); // Debug Log
+            console.log(">>> Store button condition MET");
             playUIClick(); storeInterface.style.display = 'flex'; updateDisplays(); updatePauseButtonVisibility();
         } else if (achievementButtonBounds && touchX >= achievementButtonBounds.x && touchX <= achievementButtonBounds.x + achievementButtonBounds.width && touchY >= achievementButtonBounds.y && touchY <= achievementButtonBounds.y + achievementButtonBounds.height) {
-            console.log(">>> Achievement button condition MET"); // Debug Log
+            console.log(">>> Achievement button condition MET");
             playUIClick(); populateAchievementModal(); achievementModal.style.display = 'flex'; updatePauseButtonVisibility();
         } else {
-            console.log(">>> Neither button condition met, handling restart."); // Debug Log
+            console.log(">>> Neither button condition met, handling restart.");
             handleGameStartInteraction();
         } return; } if (isGameRunning) { touchStartX = touch.screenX; touchStartY = touch.screenY; touchStartTime = Date.now(); isSwiping = false; } }, {passive: false});
     gameContainer.addEventListener('touchmove', (e) => { if (isPaused || isAnyModalOpen()) return; if (!isGameRunning || touchStartY === 0) return; const touch = e.changedTouches[0]; const currentX = touch.screenX; const currentY = touch.screenY; let distY = currentY - touchStartY; let distX = currentX - touchStartX; if (!isSwiping && (Math.abs(distY) > 10 || Math.abs(distX) > 10)) { if (Math.abs(distY) > Math.abs(distX)) { e.preventDefault(); } isSwiping = true; } if (isSwiping && distY > minSwipeYDistance && Math.abs(distX) < maxSwipeXDistance) { if (!llama.isDucking) { llama.duck(true); } } }, {passive: false});
     gameContainer.addEventListener('touchend', (e) => { if (isPaused || isAnyModalOpen()) return; if (!isGameRunning || touchStartY === 0) { touchStartY = 0; isSwiping = false; return; } const touchEndTime = Date.now(); const touchDuration = touchEndTime - touchStartTime; const touchEndY = e.changedTouches[0].screenY; const touchEndX = e.changedTouches[0].screenX; let distY = touchEndY - touchStartY; let distX = touchEndX - touchStartX; if (touchDuration < maxTapTime && Math.abs(distX) < 20 && Math.abs(distY) < 20 && !isSwiping) { console.log("Tap -> Jump"); llama.jump(); } else if (distY > minSwipeYDistance && Math.abs(distX) < maxSwipeXDistance) { console.log("Swipe Down End -> Duck End"); llama.duck(false); } else if (distY < -minSwipeYDistance && Math.abs(distX) < maxSwipeXDistance) { console.log("Swipe Up -> Jump"); llama.jump(); } else { if (llama.isDucking){ llama.duck(false); } } touchStartX = 0; touchStartY = 0; touchStartTime = 0; isSwiping = false; });
-    // --- UPDATED: Added orientationchange listener ---
     window.addEventListener('resize', resizeCanvas);
-    window.addEventListener('orientationchange', () => {
-        console.log("Orientation changed, resizing canvas...");
-        // Delay resize slightly to allow browser to update dimensions
-        setTimeout(resizeCanvas, 100);
-    });
+    window.addEventListener('orientationchange', () => { console.log("Orientation changed, resizing canvas..."); setTimeout(resizeCanvas, 100); });
     window.onload = () => { console.log("Window loaded. Initializing game display."); loadGameSettings(); loadAchievements(); resizeCanvas(); isGameOver = true; isGameRunning = false; updatePauseButtonVisibility(); checkDailyLogin(); updateDisplays(); currentMagnetDuration = baseMagnetDuration + (magnetDurationUpgradeLevel * 60); if (dailyLoginModal.style.display !== 'flex') { requestAnimationFrame(gameLoop); } console.log("Game initialized. Waiting for user interaction or modal close."); };
     function loadGameSettings() { magnetDurationUpgradeLevel = parseInt(localStorage.getItem('llamaMagnetUpgrade') || 0); startCoinUpgradeLevel = parseInt(localStorage.getItem('llamaStartCoinUpgrade') || 0); lifeEffectivenessUpgradeLevel = parseInt(localStorage.getItem('llamaLifeEffectUpgrade') || 0); coins = parseInt(localStorage.getItem('llamaCoins') || 0); playerXP = parseInt(localStorage.getItem('llamaPlayerXP') || 0); playerLevel = parseInt(localStorage.getItem('llamaPlayerLevel') || 1); highScore = parseInt(localStorage.getItem('llamaHighScore') || 0); shieldsOwned = parseInt(localStorage.getItem('llamaShields') || 0); livesOwned = parseInt(localStorage.getItem('llamaLives') || 0); magnetsOwned = parseInt(localStorage.getItem('llamaMagnets') || 0); runCount = parseInt(localStorage.getItem('llamaRunCount') || 0); adsRemoved = localStorage.getItem('llamaAdsRemoved') === 'true'; isSoundMuted = localStorage.getItem('llamaSoundMuted') === 'true'; toggleSoundButton.textContent = `Sound: ${isSoundMuted ? 'OFF' : 'ON'}`; if (typeof Tone !== 'undefined' && Tone.Master) { Tone.Master.mute = isSoundMuted; } try { dailyPlayLog = JSON.parse(localStorage.getItem('llamaDailyPlayLog') || '[]'); if (!Array.isArray(dailyPlayLog)) dailyPlayLog = []; } catch(e) { console.error("Failed to load daily play log:", e); dailyPlayLog = []; } console.log("Game settings loaded."); }
   </script>
