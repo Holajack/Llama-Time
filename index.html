@@ -359,8 +359,9 @@
     let shieldsOwned = 0; let livesOwned = 0; let magnetsOwned = 0;
     const initialGameSpeed = 3.5; // Keep increased speed
     let gameSpeed = initialGameSpeed; let baseGameSpeed = initialGameSpeed;
-    const speedIncrement = 0.3; let lastScoreThreshold = 0;
-    let gravity = 0.35; const fastFallMultiplier = 3.5;
+    const speedIncrement = 0.4; let lastScoreThreshold = 0; // More aggressive speed increase
+    const speedIncreaseInterval = 75; // Increase speed every 75 points instead of 100
+    let gravity = 0.7; const fastFallMultiplier = 2.5; // Faster gravity for snappier jumps
     let isGameOver = true; let isGameRunning = false; let animationFrameId;
     let obstacles = []; let coinObjects = []; let clouds = []; let mysteryBoxes = [];
     let frameCount = 0;
@@ -374,6 +375,7 @@
     const coinRushChance = 0.0005; const coinRushMinScore = 500;
     let framesAfterReset = 0;
     let isNight = false;
+    const dayNightCycleThreshold = 500; // Day/night switches every 500 points (was 700)
     const dayBgColor = '#87CEEB'; const nightBgColor = '#2c3e50';
     const dayGroundColor = '#D2B48C'; const nightGroundColor = '#B08D57';
     const dayTextColor = '#333'; const nightTextColor = '#ecf0f1';
@@ -417,7 +419,7 @@
         drawWidth: 56 * 2, drawHeight: 56 * 2, // p=4 -> 2 * original p=2
         width: 50 * 2, height: 52 * 2,
         dy: 0,
-        jumpPower: -15, // Keep increased jump power
+        jumpPower: -21, // Increased for faster, snappier jumps (matches higher gravity)
         isJumping: false,
         isDucking: false,
         duckHeight: 30 * 2, // Scaled duck height
@@ -599,8 +601,105 @@
         collect() { if (!this.collected) { this.collected = true; this.openTimer = this.openDuration; if(!isSoundMuted && audioReady) mysteryCollectSynth?.triggerAttackRelease("C5", "8n", Tone.now()); setTimeout(() => grantMysteryReward(this), 100); } }
     }
 
+    // --- PowerUp Class (Random spawning power-ups) ---
+    let powerUpObjects = []; // Array to hold spawned power-ups
+    const powerUpTypes = ['shield', 'magnet', 'invincible', 'double_coins', 'speed_boost'];
+    const powerUpEmojis = { shield: '🛡️', magnet: '🧲', invincible: '⭐', double_coins: '💰', speed_boost: '⚡' };
+    const powerUpColors = { shield: '#00CED1', magnet: '#FFD700', invincible: '#FFD700', double_coins: '#32CD32', speed_boost: '#FF6347' };
+
+    class PowerUp {
+        constructor(x, y, type, size = 50) {
+            this.x = x; this.y = y; this.width = size; this.height = size;
+            this.type = type; this.collected = false;
+            this.bobOffset = Math.random() * Math.PI * 2;
+            this.glowPhase = Math.random() * Math.PI * 2;
+        }
+        draw() {
+            if (this.collected) return;
+            const bob = Math.sin(frameCount * 0.1 + this.bobOffset) * 5;
+            const drawX = Math.round(this.x);
+            const drawY = Math.round(this.y + bob);
+            const size = this.width;
+            ctx.save();
+            ctx.translate(drawX, drawY);
+            // Glowing circle background
+            const glowIntensity = 0.5 + Math.sin(frameCount * 0.15 + this.glowPhase) * 0.3;
+            ctx.fillStyle = `rgba(255, 255, 255, ${glowIntensity * 0.5})`;
+            ctx.beginPath();
+            ctx.arc(size/2, size/2, size/2 + 5, 0, Math.PI * 2);
+            ctx.fill();
+            // Main circle
+            ctx.fillStyle = powerUpColors[this.type] || '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(size/2, size/2, size/2, 0, Math.PI * 2);
+            ctx.fill();
+            // Border
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            // Emoji
+            ctx.fillStyle = 'white';
+            ctx.font = `${size * 0.5}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(powerUpEmojis[this.type] || '?', size/2, size/2);
+            ctx.restore();
+        }
+        update() { this.x -= gameSpeed; }
+        collect() {
+            if (this.collected) return;
+            this.collected = true;
+            if(!isSoundMuted && audioReady) rewardSynth?.triggerAttackRelease(["E4", "G4", "B4"], "8n");
+            // Apply power-up effect
+            switch(this.type) {
+                case 'shield':
+                    if (!isShieldActive && !isInvincibleBoostActive) {
+                        isShieldActive = true;
+                        showPopup(rewardPopup, 'Shield Activated!');
+                    } else { coins += 25; showPopup(rewardPopup, '+25 Coins!'); }
+                    break;
+                case 'magnet':
+                    if (!isMagnetActive) {
+                        isMagnetActive = true;
+                        magnetTimer = currentMagnetDuration;
+                        showPopup(rewardPopup, 'Coin Magnet!');
+                    } else { magnetTimer += 300; showPopup(rewardPopup, '+Magnet Time!'); }
+                    break;
+                case 'invincible':
+                    isInvincibleBoostActive = true;
+                    invincibleBoostTimer = invincibleBoostDuration + 150; // Slightly longer from pickup
+                    showPopup(rewardPopup, 'Invincible! (7s)');
+                    break;
+                case 'double_coins':
+                    isDoubleCoinsBoostActive = true;
+                    doubleCoinsBoostTimer = doubleCoinsBoostDuration;
+                    showPopup(rewardPopup, '2x Coins! (10s)');
+                    break;
+                case 'speed_boost':
+                    // Speed boost gives temporary invincibility + speed
+                    isInvincibleBoostActive = true;
+                    invincibleBoostTimer = 180; // 3 seconds
+                    gameSpeed += 2;
+                    showPopup(rewardPopup, 'Speed Boost!');
+                    break;
+            }
+            updatePowerupIndicators();
+            updateDisplays();
+        }
+    }
+
     // --- Utility Functions ---
     function getRandomInt(min, max) { min = Math.ceil(min); max = Math.floor(max); return Math.floor(Math.random() * (max - min + 1)) + min; }
+    // Calculate coin value based on current score (coins worth more as game progresses)
+    function getCoinValue() {
+        let baseValue = 1;
+        // Every 250 points, coins are worth 1 more (up to max of 5)
+        const scoreBonus = Math.min(4, Math.floor(score / 250));
+        baseValue += scoreBonus;
+        // Double coins boost doubles the final value
+        if (isDoubleCoinsBoostActive) baseValue *= 2;
+        return baseValue;
+    }
     function showPopup(element, message, duration = 2000) { element.textContent = message; element.style.display = 'block'; requestAnimationFrame(() => { element.style.opacity = 1; }); setTimeout(() => { element.style.opacity = 0; setTimeout(() => { element.style.display = 'none'; }, 500); }, duration); }
     function getCurrentDateString() { return new Date().toISOString().split('T')[0]; }
 
@@ -718,6 +817,61 @@
             }
         }
     }
+    // --- Spawn Random PowerUp ---
+    function spawnPowerUp() {
+        if (!isGameRunning || isPaused || isCoinRushActive) return;
+        // Power-ups spawn rarely, more common at higher scores
+        const baseChance = 0.0003; // Base spawn chance
+        const scoreBonus = Math.min(0.0004, score * 0.0000005); // Increases slightly with score
+        const chance = baseChance + scoreBonus;
+        const minGap = 600; // Minimum gap between power-ups
+        const lastPowerUp = powerUpObjects[powerUpObjects.length - 1];
+        const spawnX = canvas.width;
+        const size = 50;
+
+        if (Math.random() < chance && score >= 100) { // Only spawn after score 100
+            const powerUpGapOk = !lastPowerUp || (spawnX - (lastPowerUp.x + lastPowerUp.width)) > minGap;
+            if (powerUpGapOk) {
+                // Random Y position (ground or air)
+                let y;
+                if (Math.random() < 0.4) {
+                    y = canvas.height - groundHeight - size - 10; // Ground level
+                } else {
+                    y = canvas.height - groundHeight - size - (llama.height * 0.5) - Math.random() * (llama.height * 0.8); // Air
+                }
+                y = Math.max(size + 10, y);
+
+                // Pick random power-up type (weighted)
+                const rand = Math.random();
+                let type;
+                if (rand < 0.25) type = 'shield';
+                else if (rand < 0.45) type = 'magnet';
+                else if (rand < 0.65) type = 'double_coins';
+                else if (rand < 0.85) type = 'invincible';
+                else type = 'speed_boost';
+
+                powerUpObjects.push(new PowerUp(spawnX, y, type, size));
+                console.log(`Spawned ${type} power-up at score ${score}`);
+            }
+        }
+    }
+
+    // --- Update PowerUps ---
+    function updatePowerUps() {
+        for (let i = powerUpObjects.length - 1; i >= 0; i--) {
+            const powerUp = powerUpObjects[i];
+            if (!powerUp) continue;
+            powerUp.update();
+            powerUp.draw();
+            if (!powerUp.collected && checkCollision(llama, powerUp)) {
+                powerUp.collect();
+                powerUpObjects.splice(i, 1);
+            } else if (powerUp.x + powerUp.width < 0) {
+                powerUpObjects.splice(i, 1);
+            }
+        }
+    }
+
     // --- UPDATED spawnMysteryBox (Using larger size, reduced chance) ---
     function spawnMysteryBox() {
         if (!isGameRunning || isPaused || isCoinRushActive) return;
@@ -758,7 +912,7 @@
         }
     }
     function updateObstacles() { for (let i=obstacles.length-1; i>=0; i--) { const obs = obstacles[i]; if (!obs) continue; const wasBehindLlama = obs.x + obs.width < llama.x; obs.update(); obs.draw(); const isNowBehindLlama = obs.x + obs.width < llama.x; if (!wasBehindLlama && isNowBehindLlama && !isGameOver) { if (obs.type === 'cactus' && llama.isJumping) { cactiJumpedThisRun++; totalCactiJumped++; updateMissionProgress('jump_cactus', cactiJumpedThisRun); } else if (obs.type === 'bird' && llama.isDucking) { birdsDuckedThisRun++; totalBirdsDucked++; updateMissionProgress('duck_bird', birdsDuckedThisRun); } } if (checkCollision(llama, obs)) { handleCollision(obs); if (isGameOver) return; } if (obs.x + obs.width < 0) { obstacles.splice(i, 1); } } }
-    function updateCoins() { const magnetRadius = isMagnetActive ? 100 : 0; for (let i=coinObjects.length-1; i>=0; i--) { const c = coinObjects[i]; if (!c) continue; c.update(); if (isMagnetActive && !c.collected) { const llamaCenterX = llama.x + llama.width / 2; const llamaHitboxY = llama.isDucking ? llama.y + (llama.height - llama.duckHeight) : llama.y; const llamaHitboxHeight = llama.isDucking ? llama.duckHeight : llama.height; const llamaCenterY = llamaHitboxY + llamaHitboxHeight / 2; const coinCenterX = c.x + c.radius; const coinCenterY = c.y + c.radius; const dx = llamaCenterX - coinCenterX; const dy = llamaCenterY - coinCenterY; const distance = Math.sqrt(dx*dx + dy*dy); if(distance < magnetRadius){ const magnetSpeed = 6; c.x += (dx / distance) * magnetSpeed; c.y += (dy / distance) * magnetSpeed;} } c.draw(); const effectiveRadius = isMagnetActive ? c.radius * 1.5 : c.radius; if (!c.collected && checkCollision(llama, c, true, effectiveRadius)) { c.collected=true; const indexToRemove = coinObjects.findIndex(coin => coin === c); if(indexToRemove !== -1) coinObjects.splice(indexToRemove,1); const coinValue = isDoubleCoinsBoostActive ? 2 : 1; coins += coinValue; coinsCollectedThisRun += coinValue; totalCoinsCollected += coinValue; updateMissionProgress('coins', coinsCollectedThisRun); if(!isSoundMuted && audioReady) coinSynth.triggerAttackRelease("E6", "16n"); updateDisplays(); } else if (c.x + c.radius*2 < 0) { coinObjects.splice(i, 1); } } }
+    function updateCoins() { const magnetRadius = isMagnetActive ? 100 : 0; for (let i=coinObjects.length-1; i>=0; i--) { const c = coinObjects[i]; if (!c) continue; c.update(); if (isMagnetActive && !c.collected) { const llamaCenterX = llama.x + llama.width / 2; const llamaHitboxY = llama.isDucking ? llama.y + (llama.height - llama.duckHeight) : llama.y; const llamaHitboxHeight = llama.isDucking ? llama.duckHeight : llama.height; const llamaCenterY = llamaHitboxY + llamaHitboxHeight / 2; const coinCenterX = c.x + c.radius; const coinCenterY = c.y + c.radius; const dx = llamaCenterX - coinCenterX; const dy = llamaCenterY - coinCenterY; const distance = Math.sqrt(dx*dx + dy*dy); if(distance < magnetRadius){ const magnetSpeed = 6; c.x += (dx / distance) * magnetSpeed; c.y += (dy / distance) * magnetSpeed;} } c.draw(); const effectiveRadius = isMagnetActive ? c.radius * 1.5 : c.radius; if (!c.collected && checkCollision(llama, c, true, effectiveRadius)) { c.collected=true; const indexToRemove = coinObjects.findIndex(coin => coin === c); if(indexToRemove !== -1) coinObjects.splice(indexToRemove,1); const coinValue = getCoinValue(); coins += coinValue; coinsCollectedThisRun += coinValue; totalCoinsCollected += coinValue; updateMissionProgress('coins', coinsCollectedThisRun); if(!isSoundMuted && audioReady) coinSynth.triggerAttackRelease("E6", "16n"); updateDisplays(); } else if (c.x + c.radius*2 < 0) { coinObjects.splice(i, 1); } } }
     function updateMysteryBoxes() { for (let i = mysteryBoxes.length - 1; i >= 0; i--) { const box = mysteryBoxes[i]; if (!box) continue; box.update(); box.draw(); if (!box.collected && checkCollision(llama, box)) { box.collect(); } if ((box.collected && box.openTimer <= 0) || box.x + box.width < 0) { mysteryBoxes.splice(i, 1); } } }
     function checkCollision(llamaRect, otherObj, isCoin = false, coinRadius = 0) { let llamaTop = llamaRect.isDucking ? llamaRect.y + (llamaRect.height - llamaRect.duckHeight) : llamaRect.y; let llamaHeight = llamaRect.isDucking ? llamaRect.duckHeight : llamaRect.height; let llamaLeft = llamaRect.x; let llamaWidth = llamaRect.width; let llamaBottom = llamaTop + llamaHeight; let llamaRight = llamaLeft + llamaWidth; if (isCoin) { let coinCenterX = otherObj.x + otherObj.radius; const bob = Math.sin(frameCount*0.1+otherObj.x*0.05)*3; let coinCenterY = otherObj.y + bob + otherObj.radius; let radius = coinRadius > 0 ? coinRadius : otherObj.radius; let closestX = Math.max(llamaLeft, Math.min(coinCenterX, llamaRight)); let closestY = Math.max(llamaTop, Math.min(coinCenterY, llamaBottom)); let distanceX = coinCenterX - closestX; let distanceY = coinCenterY - closestY; let distanceSquared = (distanceX * distanceX) + (distanceY * distanceY); return distanceSquared < (radius * radius); } else { let objTop = otherObj.y; let objLeft = otherObj.x; let objWidth = otherObj.width; let objHeight = otherObj.height; let objBottom = objTop + objHeight; let objRight = objLeft + objWidth; return ( llamaLeft < objRight && llamaRight > objLeft && llamaTop < objBottom && llamaBottom > objTop ); } }
     function handleCollision(obs) { if (isInvincibleBoostActive) { const i=obstacles.indexOf(obs); if(i>-1) obstacles.splice(i,1); return; } if(isShieldActive){ isShieldActive=false; totalShieldsUsed++; updatePowerupIndicators(); const i=obstacles.indexOf(obs); if(i>-1) obstacles.splice(i,1); if(!isSoundMuted && audioReady) hitSynth.triggerAttackRelease("C4", "8n"); return; } if(extraLives>0){ extraLives--; updatePowerupIndicators(); const clearMultiplier = 1.0 + (lifeEffectivenessUpgradeLevel * 0.2); const clearRange = 75 * clearMultiplier; obstacles=obstacles.filter(o => o.x > llama.x + llama.width + clearRange || o.x + o.width < llama.x - clearRange); if(!isSoundMuted && audioReady) hitSynth.triggerAttackRelease("A3", "8n"); return; } if(!isSoundMuted && audioReady) hitSynth.triggerAttackRelease("G2", "4n"); gameOver(); }
@@ -773,7 +927,7 @@
     function selectNewMission() { const availableMissions = missionPool; if (availableMissions.length > 0) { activeMission = availableMissions[Math.floor(Math.random() * availableMissions.length)]; missionProgress = 0; coinsCollectedThisRun = 0; cactiJumpedThisRun = 0; birdsDuckedThisRun = 0; console.log("New Mission Selected:", activeMission.description); missionNotificationText = `New Mission: ${activeMission.description}`; missionNotificationTimer = missionNotificationDuration; } else { activeMission = null; console.log("No more missions available."); missionNotificationText = ""; missionNotificationTimer = 0; } }
     function showMissionCompletePopup() { showPopup(missionCompletePopup, `Mission Complete! +${activeMission.reward} Coins 🪙`); if(!isSoundMuted && audioReady) missionSynth.triggerAttackRelease("C6", "8n"); }
     function updateMissionProgress(type, value) { if (!activeMission || activeMission.type !== type || !isGameRunning || isPaused) { return; } missionProgress = value; if (missionProgress >= activeMission.target) { console.log(`Mission Complete: ${activeMission.description}`); coins += activeMission.reward; localStorage.setItem('llamaCoins', coins); showMissionCompletePopup(); selectNewMission(); updateDisplays(); } }
-    function resetGame() { console.log("Resetting game..."); score=0; obstacles=[]; coinObjects=[]; clouds=[]; mysteryBoxes = []; frameCount=0; lastScoreThreshold=0; isGameOver=false; isPaused = false; updatePauseButtonVisibility(); isShieldActive=false; isMagnetActive=false; magnetTimer=0; extraLives=0; isInvincibleBoostActive = false; invincibleBoostTimer = 0; isDoubleCoinsBoostActive = false; doubleCoinsBoostTimer = 0; isSpeedBoostActive = false; speedBoostTimer = 0; isCoinRushActive = false; coinRushTimer = 0; baseGameSpeed = initialGameSpeed; gameSpeed = baseGameSpeed; console.log("Speed reset to:", gameSpeed); const startingCoinBonus = startCoinUpgradeLevel * 5; if (startingCoinBonus > 0) { coins += startingCoinBonus; console.log(`Applied starting coin bonus: +${startingCoinBonus}`); } currentMagnetDuration = baseMagnetDuration + (magnetDurationUpgradeLevel * 60); if(shieldsOwned>0){isShieldActive=true;shieldsOwned--;localStorage.setItem('llamaShields',shieldsOwned);} if(livesOwned>0){extraLives=1;livesOwned--;localStorage.setItem('llamaLives',livesOwned);} if(magnetsOwned>0){isMagnetActive=true;magnetTimer=currentMagnetDuration;magnetsOwned--;localStorage.setItem('llamaMagnets',magnetsOwned);} llama.reset(); coinsCollectedThisRun = 0; cactiJumpedThisRun = 0; birdsDuckedThisRun = 0; selectNewMission(); updateDisplays(); framesAfterReset = 10; console.log("Game reset complete."); }
+    function resetGame() { console.log("Resetting game..."); score=0; obstacles=[]; coinObjects=[]; clouds=[]; mysteryBoxes = []; powerUpObjects = []; frameCount=0; lastScoreThreshold=0; isGameOver=false; isPaused = false; updatePauseButtonVisibility(); isShieldActive=false; isMagnetActive=false; magnetTimer=0; extraLives=0; isInvincibleBoostActive = false; invincibleBoostTimer = 0; isDoubleCoinsBoostActive = false; doubleCoinsBoostTimer = 0; isSpeedBoostActive = false; speedBoostTimer = 0; isCoinRushActive = false; coinRushTimer = 0; baseGameSpeed = initialGameSpeed; gameSpeed = baseGameSpeed; console.log("Speed reset to:", gameSpeed); const startingCoinBonus = startCoinUpgradeLevel * 5; if (startingCoinBonus > 0) { coins += startingCoinBonus; console.log(`Applied starting coin bonus: +${startingCoinBonus}`); } currentMagnetDuration = baseMagnetDuration + (magnetDurationUpgradeLevel * 60); if(shieldsOwned>0){isShieldActive=true;shieldsOwned--;localStorage.setItem('llamaShields',shieldsOwned);} if(livesOwned>0){extraLives=1;livesOwned--;localStorage.setItem('llamaLives',livesOwned);} if(magnetsOwned>0){isMagnetActive=true;magnetTimer=currentMagnetDuration;magnetsOwned--;localStorage.setItem('llamaMagnets',magnetsOwned);} llama.reset(); coinsCollectedThisRun = 0; cactiJumpedThisRun = 0; birdsDuckedThisRun = 0; selectNewMission(); updateDisplays(); framesAfterReset = 10; console.log("Game reset complete."); }
     // --- UPDATED drawUI: Increased font size ---
     function drawUI() {
         const padding = 15;
@@ -903,7 +1057,7 @@
         }
         isGameRunning = true; updatePauseButtonVisibility();
         if (framesAfterReset > 0) { framesAfterReset--; }
-        const scoreCycle = Math.floor(score / 700); const shouldBeNight = scoreCycle % 2 !== 0;
+        const scoreCycle = Math.floor(score / dayNightCycleThreshold); const shouldBeNight = scoreCycle % 2 !== 0;
         if (shouldBeNight !== isNight) { isNight = shouldBeNight; setBackground(isNight); if (isGameRunning && isNight) { totalNightsSurvived++; checkAchievements(); } }
         if (!isCoinRushActive && score >= coinRushMinScore && Math.random() < coinRushChance && framesAfterReset <= 0) { isCoinRushActive = true; coinRushTimer = coinRushDuration; if(!isSoundMuted && audioReady) coinRushSynth?.triggerAttackRelease("4n"); console.log("COIN RUSH STARTED!"); }
         if (isCoinRushActive) { coinRushTimer--; if (coinRushTimer <= 0) { isCoinRushActive = false; gameSpeed = baseGameSpeed; console.log("COIN RUSH ENDED"); } }
@@ -913,11 +1067,11 @@
         ctx.fillStyle = currentBgColor; ctx.fillRect(0, 0, canvas.width, canvas.height);
         spawnCloud(); updateClouds(); drawStars(); drawGround();
         llama.update(); llama.draw();
-        if (framesAfterReset <= 0) { spawnObstacle(); spawnCoin(); spawnMysteryBox(); }
-        updateObstacles(); updateCoins(); updateMysteryBoxes();
+        if (framesAfterReset <= 0) { spawnObstacle(); spawnCoin(); spawnMysteryBox(); spawnPowerUp(); }
+        updateObstacles(); updateCoins(); updateMysteryBoxes(); updatePowerUps();
         updateScore();
-        const currentScoreThreshold = Math.floor(score / 100);
-        if (currentScoreThreshold > lastScoreThreshold && !isCoinRushActive) { gameSpeed += speedIncrement; baseGameSpeed += speedIncrement; lastScoreThreshold = currentScoreThreshold; console.log(`Score ${lastScoreThreshold * 100}, Speed: ${gameSpeed.toFixed(2)}`); }
+        const currentScoreThreshold = Math.floor(score / speedIncreaseInterval);
+        if (currentScoreThreshold > lastScoreThreshold && !isCoinRushActive) { gameSpeed += speedIncrement; baseGameSpeed += speedIncrement; lastScoreThreshold = currentScoreThreshold; console.log(`Score ${lastScoreThreshold * speedIncreaseInterval}, Speed: ${gameSpeed.toFixed(2)}`); }
         drawUI();
         frameCount++;
         animationFrameId = requestAnimationFrame(gameLoop);
