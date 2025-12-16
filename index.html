@@ -357,7 +357,7 @@
     // --- Game Variables ---
     let score = 0; let highScore = 0; let coins = 0;
     let shieldsOwned = 0; let livesOwned = 0; let magnetsOwned = 0;
-    const initialGameSpeed = 3.5; // Keep increased speed
+    const initialGameSpeed = 6.0; // Faster starting speed for engaging gameplay
     let gameSpeed = initialGameSpeed; let baseGameSpeed = initialGameSpeed;
     const speedIncrement = 0.4; let lastScoreThreshold = 0; // More aggressive speed increase
     const speedIncreaseInterval = 75; // Increase speed every 75 points instead of 100
@@ -818,41 +818,57 @@
         }
     }
     // --- Spawn Random PowerUp ---
+    // Power-up rarity: shield/magnet (common) > double_coins (uncommon) > invincible (rare) > speed_boost (very rare)
+    const powerUpSpawnRates = {
+        shield: 0.0008,        // Common - ~1 per 1250 frames
+        magnet: 0.0006,        // Common - ~1 per 1667 frames
+        double_coins: 0.0003,  // Uncommon - ~1 per 3333 frames
+        invincible: 0.00012,   // Rare - ~1 per 8333 frames
+        speed_boost: 0.00006   // Very rare - ~1 per 16667 frames
+    };
+
     function spawnPowerUp() {
         if (!isGameRunning || isPaused || isCoinRushActive) return;
-        // Power-ups spawn rarely, more common at higher scores
-        const baseChance = 0.0003; // Base spawn chance
-        const scoreBonus = Math.min(0.0004, score * 0.0000005); // Increases slightly with score
-        const chance = baseChance + scoreBonus;
-        const minGap = 600; // Minimum gap between power-ups
+        if (score < 150) return; // Only spawn after score 150
+
+        const minGap = 500; // Minimum gap between power-ups
         const lastPowerUp = powerUpObjects[powerUpObjects.length - 1];
         const spawnX = canvas.width;
         const size = 50;
 
-        if (Math.random() < chance && score >= 100) { // Only spawn after score 100
-            const powerUpGapOk = !lastPowerUp || (spawnX - (lastPowerUp.x + lastPowerUp.width)) > minGap;
-            if (powerUpGapOk) {
-                // Random Y position (ground or air)
-                let y;
-                if (Math.random() < 0.4) {
-                    y = canvas.height - groundHeight - size - 10; // Ground level
-                } else {
-                    y = canvas.height - groundHeight - size - (llama.height * 0.5) - Math.random() * (llama.height * 0.8); // Air
-                }
-                y = Math.max(size + 10, y);
+        // Check gap
+        const powerUpGapOk = !lastPowerUp || (spawnX - (lastPowerUp.x + lastPowerUp.width)) > minGap;
+        if (!powerUpGapOk) return;
 
-                // Pick random power-up type (weighted)
-                const rand = Math.random();
-                let type;
-                if (rand < 0.25) type = 'shield';
-                else if (rand < 0.45) type = 'magnet';
-                else if (rand < 0.65) type = 'double_coins';
-                else if (rand < 0.85) type = 'invincible';
-                else type = 'speed_boost';
+        // Each power-up type has its own spawn chance (rarer = better)
+        let type = null;
+        const rand = Math.random();
 
-                powerUpObjects.push(new PowerUp(spawnX, y, type, size));
-                console.log(`Spawned ${type} power-up at score ${score}`);
+        // Check from rarest to most common
+        if (rand < powerUpSpawnRates.speed_boost) {
+            type = 'speed_boost';
+        } else if (rand < powerUpSpawnRates.invincible) {
+            type = 'invincible';
+        } else if (rand < powerUpSpawnRates.double_coins) {
+            type = 'double_coins';
+        } else if (rand < powerUpSpawnRates.magnet) {
+            type = 'magnet';
+        } else if (rand < powerUpSpawnRates.shield) {
+            type = 'shield';
+        }
+
+        if (type) {
+            // Random Y position (ground or air)
+            let y;
+            if (Math.random() < 0.4) {
+                y = canvas.height - groundHeight - size - 10; // Ground level
+            } else {
+                y = canvas.height - groundHeight - size - (llama.height * 0.5) - Math.random() * (llama.height * 0.8); // Air
             }
+            y = Math.max(size + 10, y);
+
+            powerUpObjects.push(new PowerUp(spawnX, y, type, size));
+            console.log(`Spawned ${type} power-up at score ${score}`);
         }
     }
 
